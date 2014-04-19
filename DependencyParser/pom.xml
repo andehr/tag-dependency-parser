@@ -1,0 +1,155 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+    <groupId>uk.ac.susx.tag</groupId>
+    <artifactId>dependencyparser</artifactId>
+    <inceptionYear>2014</inceptionYear>
+    <version>1.0</version>
+    <packaging>jar</packaging>
+
+    <dependencies>
+
+        <dependency>
+            <!--Used for encoding objects as JSON strings.-->
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.2.4</version>
+        </dependency>
+
+        <dependency>
+            <!--Essential java utilities, including sorting and easy data structure creation-->
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>14.0.1</version>
+        </dependency>
+
+        <dependency>
+            <!--Fast primitive collections-->
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil</artifactId>
+            <version>6.5.7</version>
+        </dependency>
+
+        <dependency>
+            <!--Java implementation of Liblinear, used by the dependency parser-->
+            <groupId>de.bwaldvogel</groupId>
+            <artifactId>liblinear</artifactId>
+            <version>1.92</version>
+        </dependency>
+
+        <dependency>
+            <!--Allows inspection of packages, so that it's easy to add functionality. See Options class.-->
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>0.9.9-RC1</version>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.2.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>1.6</version>
+                <configuration>
+
+                    <quiet>false</quiet>
+
+                    <inceptionYear>${project.inceptionYear}</inceptionYear>
+                    <organizationName>CASM Consulting</organizationName>
+                    <licenseName>apache_v2</licenseName>
+                    <roots>
+                        <root>src</root>
+                    </roots>
+
+                    <includes>
+                        <include>**/*.java</include>
+                        <include>**/*.js</include>
+                        <include>**/*.css</include>
+                        <include>**/*.html</include>
+                        <include>**/*.sql</include>
+                        <include>**/*.py</include>
+                    </includes>
+
+                    <descriptionTemplate>${basedir}/src/license/desc.ftl</descriptionTemplate>
+
+                </configuration>
+            </plugin>
+
+        </plugins>
+
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh</artifactId>
+                <version>2.4</version>
+            </extension>
+        </extensions>
+    </build>
+
+    <repositories>
+
+        <repository>
+            <id>tag-release</id>
+            <name>Tag Releases</name>
+            <layout>default</layout>
+            <url>http://tag.inf.susx.ac.uk/mvn/release</url>
+        </repository>
+
+        <repository>
+            <id>tag-snapshot</id>
+            <name>Tag Snapshots</name>
+            <layout>default</layout>
+            <url>http://tag.inf.susx.ac.uk/mvn/snapshot</url>
+        </repository>
+
+    </repositories>
+
+    <distributionManagement>
+
+        <repository>
+            <id>tag-release</id>
+            <url>scp://tag-dev.inf.susx.ac.uk/mvn/release</url>
+        </repository>
+
+        <snapshotRepository>
+            <id>tag-snapshot</id>
+            <url>scp://tag-dev.inf.susx.ac.uk/mvn/snapshot</url>
+        </snapshotRepository>
+
+    </distributionManagement>
+
+</project>
