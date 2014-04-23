@@ -56,8 +56,8 @@ public class ParserStateOneStack implements ParserState {
                 default:
                     throw new RuntimeException("Invalid data structure.");
             }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw new RuntimeException("Invalid index", e);
+        } catch (IndexOutOfBoundsException e) {
+            return null; // Token is not present at requested address, so return null.
         }
     }
 

@@ -29,7 +29,8 @@ public interface ParserState {
      * Given the name of a structure (e.g. 'stk' for 'stack') and an address, interpret
      * this as the location of a token in the parser state, and return that token.
      *
-     * This exposes the data structures to the feature extraction process.
+     * This exposes the data structures to the feature extraction process. Return null if there is no token
+     * as the location present.
      */
     public Token getToken(String structureType, int address);
 

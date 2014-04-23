@@ -200,6 +200,7 @@ public class FeatureTable {
         }
 
         private String getAttributeFeature(Token token, String attribute){
+            if (token == null) return absentFeature;
             String feature = attribute.equals("deprel")? token.getDeprel() : token.getAtt(attribute);
             return feature==null? absentFeature : feature;
         }
@@ -234,6 +235,7 @@ public class FeatureTable {
 
         public Token getToken(ParserState state) {
             Token token = state.getToken(structureType, address);
+            if (token==null) return null;
             try {
                 for (String addressingFunction : addressingFunctions) {
                     switch(addressingFunction) {

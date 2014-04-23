@@ -54,17 +54,17 @@ public class ParseStyleArcEager extends ParseStyle {
 
             // If relation buffer-->stack, then arc is leftward, and stack item holds the deprel
             if (data.hasRelation(bufferTop, stackTop)) {
-                leftArc(state, stackTop.getGoldDeprel(), true);
+                if (!leftArc(state, stackTop.getGoldDeprel(), true)) throw new RuntimeException("Training transition was not possible");
                 return new Transition(leftArc, stackTop.getGoldDeprel());
 
             // If relation stack-->buffer, then arc is rightward, and buffer item holds the deprel
             } else if (data.hasRelation(stackTop, bufferTop)) {
-                rightArc(state, bufferTop.getGoldDeprel(), true);
+                if(!rightArc(state, bufferTop.getGoldDeprel(), true)) throw new RuntimeException("Training transition was not possible");
                 return new Transition(rightArc, bufferTop.getGoldDeprel());
 
             // If there's no relation, and all dependants have been assigned to top stack item, and it has a head assigned; reduce
             } else if (data.hasAllDependantsAssigned(stackTop) && stackTop.getHead()!=null) {
-                reduce(state, true);
+                if(!reduce(state, true)) throw new RuntimeException("Training transition was not possible");
                 return new Transition(reduce);
 
             // Otherwise, shift next buffer item onto stack
@@ -116,7 +116,7 @@ public class ParseStyleArcEager extends ParseStyle {
     private boolean leftArc(ParserStateOneStack state, String label, boolean perform){
         Queue<Token> buffer = state.getBuffer();
         Stack<Token> stack = state.getStack();
-        if (stack.isNotEmpty() && buffer.isNotEmpty() && !stack.peek().isRoot() && stack.peek().getHead()!=null){
+        if (stack.isNotEmpty() && buffer.isNotEmpty() && !stack.peek().isRoot() && stack.peek().getHead()==null){
             if (perform) {
                 Token dependant = stack.pop();
                 Token head = buffer.peek();

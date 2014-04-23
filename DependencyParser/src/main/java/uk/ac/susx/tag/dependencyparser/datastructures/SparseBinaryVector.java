@@ -27,7 +27,7 @@ import java.util.List;
  */
 public class SparseBinaryVector {
 
-    private Int2DoubleOpenHashMap elements;
+    private Int2DoubleOpenHashMap elements = new Int2DoubleOpenHashMap();
 
     /**
      * Set an index to 1.

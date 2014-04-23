@@ -1,5 +1,7 @@
 package de.bwaldvogel.liblinear;
 
+import com.google.common.base.Joiner;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -45,11 +47,12 @@ public class TrainOpenAccess extends Train {
      * UGH.
      */
     public void parseCommandline(String options, File trainingData, File model){
-        String[] optionArgs = options.split("\\w+");
+        String[] optionArgs = options.split("\\s+");
         String[] args = new String[optionArgs.length+2];
         System.arraycopy(optionArgs, 0, args, 0, optionArgs.length);
-        args[optionArgs.length+1] = trainingData.getAbsolutePath();
-        args[optionArgs.length+2] = model.getAbsolutePath();
+        args[optionArgs.length] = trainingData.getAbsolutePath();
+        args[optionArgs.length+1] = model.getAbsolutePath();
+        System.out.println(Joiner.on(" ").join(args));
         parse_command_line(args);
     }
 }

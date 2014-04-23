@@ -3,6 +3,7 @@ package uk.ac.susx.tag.dependencyparser.parsestyles;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 import uk.ac.susx.tag.dependencyparser.parserstates.ParserState;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -106,9 +107,14 @@ public abstract class ParseStyle {
         private Map<Token, Integer> dependantCounts;
 
         public TrainingData(List<Token> trainingSentence) {
+            arcs = new HashMap<>();
+            dependantCounts = new HashMap<>();
+            Token root = Token.newRootToken();
+
             if (Token.hasAllGoldRelations(trainingSentence)){
                 for (Token token : trainingSentence) {
-                    Token head = trainingSentence.get(token.getGoldHead());
+                    int headID = token.getGoldHead();
+                    Token head = headID == 0? root : trainingSentence.get(headID-1);
                     arcs.put(token, head);
                     if (dependantCounts.containsKey(head))
                         dependantCounts.put(head, 1+dependantCounts.get(head));
@@ -130,7 +136,9 @@ public abstract class ParseStyle {
          * the dependants that *token* expects.
          */
         public boolean hasAllDependantsAssigned(Token token) {
-            return dependantCounts.get(token) == token.numDependants();
+            if (dependantCounts.containsKey(token))
+                return dependantCounts.get(token) == token.numDependants();
+            else return 0 == token.numDependants();
         }
 
     }

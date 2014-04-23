@@ -184,19 +184,38 @@ public class Parser {
 /*
  * Training functionality.
  */
+    public static void main(String[] args) throws IOException {
+//        if (args.length < 1) throw new RuntimeException("Specify the path to the training data.");
+//        train(new File(args[0]));
 
-    private Parser(String classifierType, File featureTableSpecification, String parseStyle) throws IOException {
-        this.index = new Index();
-        this.classifier = Options.getClassifier(classifierType);
-        this.featureTable = new FeatureTable(featureTableSpecification);
-        this.parseStyle = Options.getParserStyle(parseStyle);
+        String testTraining = "/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/treebank3-npbrac-stanforddeps-conll-twittertags-training.txt";
+        train(new File(testTraining));
     }
 
+    /**
+     * Convenience method with sensible defaults.
+     */
+    public static Parser train(File trainingData) throws IOException {
+        File index = new File(trainingData.getAbsolutePath()+"-index");
+        File model = new File(trainingData.getAbsolutePath()+"-model");
+        return train(trainingData,
+                     "id, form, pos, head, deprel",
+                     new FeatureTable(Resources.getResource("feature_table.txt").openStream()),
+                     index,
+                     model,
+                     "-s 4 -c 0.1 -e 0.1 -B -1",
+                     "linear-svm",
+                     "arc-eager");
+    }
+
+    /**
+     * Convenience method with sensible defaults.
+     */
     public static Parser train(File trainingData, File featureTable) throws IOException {
 
         File index = new File(trainingData.getAbsolutePath()+"-index");
         File model = new File(trainingData.getAbsolutePath()+"-model");
-        return train(trainingData, "id, form, pos, head, deprel", featureTable, index, model,
+        return train(trainingData, "id, form, pos, head, deprel", new FeatureTable(featureTable), index, model,
                      "-s 4 -c 0.1 -e 0.1 -B -1",
                      "linear-svm",
                      "arc-eager");
@@ -210,7 +229,7 @@ public class Parser {
      */
     public static Parser train(File trainingData,
                                String dataFormat,
-                               File featureTableSpecification,
+                               FeatureTable featureTable,
                                File indexOutput,
                                File modelOutput,
                                String classifierOptions,
@@ -218,8 +237,21 @@ public class Parser {
                                String parseStyle) throws IOException {
 
         try (CoNLLReader reader = new CoNLLReader(trainingData, dataFormat))  {
-            return train(reader, featureTableSpecification, indexOutput, modelOutput, classifierOptions, classifierType, parseStyle);
+            return train(reader, featureTable, indexOutput, modelOutput, classifierOptions, classifierType, parseStyle);
         }
+    }
+
+    /**
+     * Provide iterable format support for training sentences.
+     */
+    public static Parser train(Iterable<List<Token>> trainingSentences,
+                               FeatureTable featureTable,
+                               File indexOutput,
+                               File modelOutput,
+                               String classifierOptions,
+                               String classifierType,
+                               String parseStyle) throws IOException {
+        return train(trainingSentences.iterator(), featureTable, indexOutput, modelOutput, classifierOptions, classifierType, parseStyle);
     }
 
     /**
@@ -229,31 +261,25 @@ public class Parser {
      *                          as the Token.buildSentence() function would produce. I.e. with the first token being
      *                          the root, and the gold standard fields assigned. This can be done from CoNLL format
      *                          data. See other training method.
-     * @param featureTableSpecification The specification of feature extraction, see FeatureTable class.
+     * @param featureTable see FeatureTable class. Specification of the features to be extracted. (set to null for default)
      * @param indexOutput Where to save the index tracking feature IDs
      * @param modelOutput Where to save the classifier model
      * @param classifierOptions Options to pass to the classifier
      * @param classifierType The type of classifier to use (see classifiers package)
      * @param parseStyle The style of parsing to be performed (see parserstyles package)
      */
-    public static Parser train(Iterable<List<Token>> trainingSentences,
-                               File featureTableSpecification,
-                               File indexOutput,
-                               File modelOutput,
-                               String classifierOptions,
-                               String classifierType,
-                               String parseStyle) throws IOException {
-        return train(trainingSentences.iterator(), featureTableSpecification, indexOutput, modelOutput, classifierOptions, classifierType, parseStyle);
-    }
-
     public static Parser train(Iterator<List<Token>> trainingSentences,
-                               File featureTableSpecification,
+                               FeatureTable featureTable,
                                File indexOutput,
                                File modelOutput,
                                String classifierOptions,
                                String classifierType,
                                String parseStyle) throws IOException {
-        Parser parser = new Parser(classifierType, featureTableSpecification, parseStyle);
+
+        // Use private constructor (see below) to make empty untrained parser
+        Parser parser = new Parser(classifierType,
+                                   featureTable==null? new FeatureTable(Resources.getResource("feature_table.txt").openStream()) : featureTable,
+                                   parseStyle);
 
         // First convert the training data into feature vectors and put in temporary file
 
@@ -283,6 +309,9 @@ public class Parser {
                 }
             }
         }
+
+        System.out.println("Starting the classifier training...");
+
         // Then pass responsibility to the classifier for the machine learning (the model gets saved in this process)
         parser.classifier.train(convertedTrainingData, modelOutput, classifierOptions);
 
@@ -294,6 +323,13 @@ public class Parser {
 
         // Return the trained parser
         return parser;
+    }
+
+    private Parser(String classifierType, FeatureTable featureTable, String parseStyle) throws IOException {
+        this.index = new Index();
+        this.classifier = Options.getClassifier(classifierType);
+        this.featureTable = featureTable;
+        this.parseStyle = Options.getParserStyle(parseStyle);
     }
 
 
