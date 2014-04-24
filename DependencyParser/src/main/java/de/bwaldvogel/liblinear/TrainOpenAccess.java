@@ -52,7 +52,6 @@ public class TrainOpenAccess extends Train {
         System.arraycopy(optionArgs, 0, args, 0, optionArgs.length);
         args[optionArgs.length] = trainingData.getAbsolutePath();
         args[optionArgs.length+1] = model.getAbsolutePath();
-        System.out.println(Joiner.on(" ").join(args));
         parse_command_line(args);
     }
 }

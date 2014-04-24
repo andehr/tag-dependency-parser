@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 /**
- * Simple FIFO data structure, implementing using doubly linked list.
+ * Simple FIFO data structure, implemented using doubly linked list.
  *
  * Created by Andrew D. Robertson on 11/04/2014.
  */

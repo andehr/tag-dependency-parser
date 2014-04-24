@@ -70,6 +70,21 @@ public class Parser {
         this.parseStyle = Options.getParserStyle(parseStyle);
     }
 
+
+    public void parseFile(File data, File output) throws IOException {
+        parseFile(data, output, "id, form, pos, head, deprel", "", "confidence");
+    }
+
+    public void parseFile(File data, File output, String dataFormat, String classifierOptions, String transitionSelectionMethod) throws IOException {
+        try (CoNLLWriter out = new CoNLLWriter(output);
+             CoNLLReader in = new CoNLLReader(data, dataFormat)) {
+
+            while(in.hasNext()) {
+                out.write(parseSentence(in.next(), classifierOptions, transitionSelectionMethod));
+            }
+        }
+    }
+
     public List<Token> parseSentence(List<Token> sentence) {
         return parseSentence(sentence, "", "confidence");
     }
@@ -104,11 +119,9 @@ public class Parser {
         }
 
         // Any token whose head has been left unassigned by the parser, is automatically assigned to the root.
-        // Except the root of course, which we are expecting to have no head.
-        for (int i = 1; i < sentence.size(); i++) {
-            Token token = sentence.get(i);
+        for (Token token : sentence) {
             if (token.getHead() == null)
-                token.setHead(sentence.get(0), rootRelation);
+                token.setHead(state.getRootToken(), rootRelation);
         }
 
         // The tokens are modified in place, but returned anyway for convenience.
@@ -184,13 +197,6 @@ public class Parser {
 /*
  * Training functionality.
  */
-    public static void main(String[] args) throws IOException {
-//        if (args.length < 1) throw new RuntimeException("Specify the path to the training data.");
-//        train(new File(args[0]));
-
-        String testTraining = "/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/treebank3-npbrac-stanforddeps-conll-twittertags-training.txt";
-        train(new File(testTraining));
-    }
 
     /**
      * Convenience method with sensible defaults.
@@ -290,6 +296,8 @@ public class Parser {
         // Get a parser state appropriate for the requested style
         ParserState state = parser.parseStyle.getNewParserState();
 
+        printStatus("Converting training data to transition-based feature vectors...");
+
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(convertedTrainingData), "UTF-8"))){
             // For each training sentence, initialise a parser state, and use the training data to hand-hold the parser through the correct transitions
             while (trainingSentences.hasNext()) {
@@ -310,16 +318,18 @@ public class Parser {
             }
         }
 
-        System.out.println("Starting the classifier training...");
-
         // Then pass responsibility to the classifier for the machine learning (the model gets saved in this process)
         parser.classifier.train(convertedTrainingData, modelOutput, classifierOptions);
+
+        printStatus("Saving indexes...");
 
         // Save the feature/transition index
         parser.index.save(indexOutput);
 
         // Try a delete of the temporary file.
         if (!convertedTrainingData.delete()) System.err.println("WARNING: converted training temp file not deleted: " + convertedTrainingData.getAbsolutePath());
+
+        printStatus("Done.");
 
         // Return the trained parser
         return parser;
@@ -364,5 +374,21 @@ public class Parser {
                 }
             }
         } return v;
+    }
+
+    public static void printStatus(String message) {
+        System.out.println("<" + new Date() + ">: " + message);
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length < 1) throw new RuntimeException("Specify the path to the training data.");
+
+        if (args.length == 1)
+            // trainingFile
+            train(new File(args[0]));
+
+        else if (args.length == 4)
+            // indexFile modelFile fileToBeParsed outputFile
+            new Parser(new File(args[0]), new File(args[1])).parseFile(new File(args[2]), new File(args[3]));
     }
 }

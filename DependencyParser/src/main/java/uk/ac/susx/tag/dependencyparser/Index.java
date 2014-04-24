@@ -41,7 +41,7 @@ public class Index {
      * Check if the ID of a transition is present in the index.
      */
     public boolean isTransitionIDPresent(ParseStyle.Transition transition){
-        return -1 == getTransitionID(transition, false);
+        return transitions.contains(transition.toString());
     }
 
     /**
@@ -62,7 +62,7 @@ public class Index {
      * Check if feature ID is present in the index.
      */
     public boolean isFeatureIDPresent(String feature) {
-        return -1 == getFeatureID(feature, false);
+        return features.contains(feature);
     }
 
     /*

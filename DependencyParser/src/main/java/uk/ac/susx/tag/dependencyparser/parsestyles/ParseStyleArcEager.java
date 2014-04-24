@@ -38,13 +38,13 @@ public class ParseStyleArcEager extends ParseStyle {
             case reduce:
                 return reduce(state, perform);
             default:
-                throw new RuntimeException("Unrecognised transition.");
+                throw new RuntimeException("Unrecognised transition: " + t.toString());
         }
     }
 
     @Override
     public Transition optimumTrainingTransition(ParserState s, TrainingData data) {
-        if (s.isTerminal()) return null;
+        if (s.isTerminal()) return null; // This ensures that the buffer has at least 1 item.
         ParserStateOneStack state = (ParserStateOneStack)s;
         Stack<Token> stack = state.getStack();
         Queue<Token> buffer = state.getBuffer();
@@ -82,6 +82,19 @@ public class ParseStyleArcEager extends ParseStyle {
     public String key() {
         return "arc-eager";
     }
+
+    /*
+     * Transitions.
+     *
+     * If a transition assigns a relation, then it requires a label parameter.
+     *
+     * Each transition consists of a set of preconditions which must be met in order for the transition to be performed.
+     * If the preconditions are met, then transition returns true, else false.
+     * If the perform parameter is true, and the preconditions are met, then the transition is performed.
+     *
+     * This allows the preconditions to be defined in only a single place, so the user has the choice whether to check
+     * for possibility or perform the transition too.
+     */
 
     private boolean shift(ParserStateOneStack state, boolean perform) {
         if (state.getBuffer().isNotEmpty()) {

@@ -18,12 +18,15 @@ import java.util.List;
  */
 public class ParserStateOneStack implements ParserState {
 
-    private Queue<Token> buffer = new Queue<>();                       // Loaded with a sentence, and processed in order
-    private Stack<Token> stack = new Stack<>(Token.newRootToken());    // Loaded with items from the buffer to be processed
+    private Token root = Token.newRootToken();
+    private Queue<Token> buffer = new Queue<>();    // To be loaded with a sentence, and processed in order
+    private Stack<Token> stack = new Stack<>(root);    // To be loaded with items from the buffer to be processed
+
 
     @Override
     public void initialise(List<Token> sentence) {
-        stack = new Stack<>(Token.newRootToken());
+        root = Token.newRootToken();
+        stack = new Stack<>(root);
         buffer = new Queue<>(sentence);
     }
 
@@ -38,12 +41,19 @@ public class ParserStateOneStack implements ParserState {
         return buffer.isEmpty();
     }
 
+    @Override
+    public Token getRootToken() {
+        return root;
+    }
+
     /**
      * Expose the stack and buffer to the feature extraction process, via the keywords "stk" and "buf" respectively.
      * Usage:
      *
      *  - buf[0] refers to the next token on the buffer queue
      *  - stk[0] refers to the top item on the stack.
+     *
+     * WARNING: returns null when index is out of bounds, instead of throwing an exception.
      */
     @Override
     public Token getToken(String structureType, int address) {

@@ -42,7 +42,7 @@ public class StringIndexer {
     }
 
     /**
-     * Specify from which IDs to start, and initialise with a list of strings
+     * Specify from which ID to start, and initialise with a list of strings
      */
     public StringIndexer(int idStart, List<String> stringList){
         this.idStart = idStart;
@@ -57,13 +57,15 @@ public class StringIndexer {
      * method.
      */
     public int getIndex(String item, boolean addIfNotPresent){
-        int index = -1;
+        int index;
         if (stringIndex.containsKey(item)){
             index = stringIndex.getInt(item);
         } else if (addIfNotPresent) {
             index = strings.size()+idStart;
             stringIndex.put(item, index);
             strings.add(item);
+        } else {
+            throw new RuntimeException("Tried to get index of an item: " + item + ", and specified not to add to index. However, the item was not found.");
         }
         return index;
     }
@@ -76,7 +78,7 @@ public class StringIndexer {
      * Get the String value of an index.
      */
     public String getValue(int index){
-        return strings.get(index-1);
+        return strings.get(index-idStart);
     }
 
     /**
@@ -90,7 +92,7 @@ public class StringIndexer {
      * Check to see whether an index is present in the mapping.
      */
     public boolean contains(int index) {
-        return index > 0 && index <= strings.size();
+        return index >= idStart && index < strings.size() + idStart;
     }
 
     public String toString() {
@@ -127,6 +129,8 @@ public class StringIndexer {
                         strings.add(reader.nextString());
                     } reader.endArray();
             }
-        } return new StringIndexer(idStart, strings);
+        }
+        reader.endObject();
+        return new StringIndexer(idStart, strings);
     }
 }

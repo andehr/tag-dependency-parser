@@ -50,12 +50,18 @@ public class Token {
     private int goldHead = 0;
     private String goldDeprel = null;
 
+    /**
+     * Convenience method for token with only the "form" attribute.
+     */
     public Token(int id, String form) {
         this.id = id;
         attributes = new HashMap<>();
         attributes.put("form", form);
     }
 
+    /**
+     * Convenience method for token with only the "form" and "pos" attributes.
+     */
     public Token(int id, String form, String pos) {
         this.id = id;
         attributes = new HashMap<>();
@@ -63,25 +69,45 @@ public class Token {
         attributes.put("pos", pos);
     }
 
+    /**
+     * @param id ID within the sentence (starts from 1), 0 is reserved for root token.
+     * @param attributes Map of attributes that the tokens possesses (if you specify "head" and "deprel" attributes
+     *                   these will be considered as the gold standard (so you don't have to worry that the parser might
+     *                   have access to these features during parse time).
+     */
     public Token(int id, Map<String, String> attributes ) {
         this.id = id;
         this.attributes = attributes;
         extractGoldRelationIfPresent();
     }
 
+    /**
+     * Get a Token representing the artificial root token.
+     */
     public static Token newRootToken(){
         return new Token(0, "ROOT");
     }
 
+    /**
+     * Check whether a token is the root token (based on the token ID).
+     */
     public boolean isRoot() {
         return id == 0;
     }
 
     public int getID() { return id; }
 
+
+    /**
+     * Check if a token comes before this token in the sentence.
+     */
     public boolean comesBefore(Token other) {
         return id < other.id;
     }
+
+    /**
+     * Check if a token comes after this token in the sentence.
+     */
     public boolean comesAfter(Token other){
         return id > other.id;
     }

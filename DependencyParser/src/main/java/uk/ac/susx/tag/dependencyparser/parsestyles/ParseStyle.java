@@ -34,7 +34,7 @@ public abstract class ParseStyle {
     public abstract boolean transition(ParserState s, Transition t, boolean perform);
 
     /**
-     * Given the current state of the parser, and data gleaning from being initialised
+     * Given the current state of the parser, and data gleaned from being initialised
      * with a training sentence, ascertain the optimum next transition.
      */
     public abstract Transition optimumTrainingTransition(ParserState s, TrainingData data);
@@ -53,7 +53,7 @@ public abstract class ParseStyle {
      */
     public static class Transition {
 
-        private static final Pattern splitter = Pattern.compile("|");
+        private static final Pattern splitter = Pattern.compile("\\|");
 
         public String transitionName;
         public String arcLabel;

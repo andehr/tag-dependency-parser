@@ -21,9 +21,14 @@ public interface ParserState {
     public void initialise(List<Token> sentence);
 
     /**
-     * @return True if parser is in terminal state.
+     * return true if parser is in terminal state.
      */
     public boolean isTerminal();
+
+    /**
+     * get the artificial root token associated with the current sentence
+     */
+    public Token getRootToken();
 
     /**
      * Given the name of a structure (e.g. 'stk' for 'stack') and an address, interpret

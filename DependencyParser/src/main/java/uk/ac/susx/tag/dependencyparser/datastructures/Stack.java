@@ -30,16 +30,16 @@ public class Stack<E>  {
     }
 
     /**
-     * Get and remove last element.
+     * Get and remove last element (top of the stack)
      */
     public E pop() {
-        E element = get(elements.size()-1);
+        E element = elements.get(elements.size()-1);
         elements.remove(elements.size()-1);
         return element;
     }
 
     /**
-     * Add to the top of the stack.
+     * Add to the top of the stack (end of the list).
      */
     public void push(E element){
         elements.add(element);

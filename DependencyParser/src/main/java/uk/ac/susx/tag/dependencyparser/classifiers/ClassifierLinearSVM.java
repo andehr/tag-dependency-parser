@@ -2,6 +2,7 @@ package uk.ac.susx.tag.dependencyparser.classifiers;
 
 import de.bwaldvogel.liblinear.*;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import uk.ac.susx.tag.dependencyparser.Parser;
 import uk.ac.susx.tag.dependencyparser.datastructures.SparseBinaryVector;
 
 import java.io.File;
@@ -21,8 +22,13 @@ public class ClassifierLinearSVM implements Classifier {
         TrainOpenAccess trainer = new TrainOpenAccess();  // Based on Liblinear "Train" class, but opens up some package-private methods.
         trainer.parseCommandline(options, trainingData, outputModel);  // Used for parsing out the options.
         try {
+            Parser.printStatus("Reading in vectors to the classifier...");
             trainer.readProblem(trainingData.getAbsolutePath());   // Read in training vectors
+
+            Parser.printStatus("Performing training...");
             model = Linear.train(trainer.getProblem(), trainer.getParameter()); // Perform training
+
+            Parser.printStatus("Saving SVM model...");
             save(outputModel);  // Save model
         } catch (IOException | InvalidInputDataException e) {
             e.printStackTrace();

@@ -40,7 +40,7 @@ public class SparseBinaryVector {
      * Check if the value corresponding to an index is nonzero.
      */
     public boolean contains(int index) {
-        return elements.containsKey(index);
+        return elements.get(index) != 0;
     }
 
     public double get(int index) {
