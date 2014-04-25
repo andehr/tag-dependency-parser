@@ -79,8 +79,12 @@ public class Index {
     }
 
     public static Index load(File jsonInput) throws IOException {
+        return load(new FileInputStream(jsonInput));
+    }
+
+    public static Index load(InputStream jsonInput) throws IOException {
         Index index = new Index();
-        try (JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(jsonInput), "UTF-8"))){
+        try (JsonReader reader = new JsonReader(new InputStreamReader(jsonInput, "UTF-8"))){
             reader.beginObject();
             while(reader.hasNext()){
                 String name = reader.nextName();

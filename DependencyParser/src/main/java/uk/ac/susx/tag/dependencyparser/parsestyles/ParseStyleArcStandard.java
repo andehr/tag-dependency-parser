@@ -1,5 +1,6 @@
 package uk.ac.susx.tag.dependencyparser.parsestyles;
 
+import uk.ac.susx.tag.dependencyparser.datastructures.IndexableQueue;
 import uk.ac.susx.tag.dependencyparser.datastructures.Queue;
 import uk.ac.susx.tag.dependencyparser.datastructures.Stack;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
@@ -44,7 +45,7 @@ public class ParseStyleArcStandard extends ParseStyle {
         if(s.isTerminal()) return null;
         ParserStateOneStack state = (ParserStateOneStack)s;
         Stack<Token> stack = state.getStack();
-        Queue<Token> buffer = state.getBuffer();
+        IndexableQueue<Token> buffer = state.getBuffer();
 
         if (stack.isNotEmpty()) {  // If there is nothing on the stack, then all we can do is shift.
             Token stackTop = stack.peek();    // Get the next item on the stack
@@ -84,7 +85,7 @@ public class ParseStyleArcStandard extends ParseStyle {
     }
 
     private boolean leftArc(ParserStateOneStack state, String label, boolean perform){
-        Queue<Token> buffer = state.getBuffer();
+        IndexableQueue<Token> buffer = state.getBuffer();
         Stack<Token> stack = state.getStack();
         if (stack.isNotEmpty() && buffer.isNotEmpty() && !stack.peek().isRoot()){
             if (perform){
@@ -96,7 +97,7 @@ public class ParseStyleArcStandard extends ParseStyle {
     }
 
     private boolean rightArc(ParserStateOneStack state, String label, boolean perform){
-        Queue<Token> buffer = state.getBuffer();
+        IndexableQueue<Token> buffer = state.getBuffer();
         Stack<Token> stack = state.getStack();
         if (stack.isNotEmpty() && buffer.isNotEmpty()) {
             if (perform) {

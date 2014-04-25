@@ -43,9 +43,34 @@ public class Parser {
  */
 
     /**
+     * Convenience method with all defaults.
+     */
+    public Parser() throws IOException {
+        File model = File.createTempFile("model", null);
+        model.deleteOnExit();
+
+        String trainingData = "full_wsj_cmu_pos_stanford_dep";
+        try (BufferedOutputStream modelStream = new BufferedOutputStream(new FileOutputStream(model)) ){
+            Resources.copy(Resources.getResource(trainingData+"-model"), modelStream);
+        }
+        classifier = Options.getClassifier("linear-svm");
+        classifier.load(model);
+        if (!model.delete()) System.err.print("WARNING: model temp file was not deleted: "+ model.getAbsolutePath());
+
+        this.index = Index.load(Resources.getResource(trainingData+"-index").openStream());
+        featureTable = new FeatureTable(Resources.getResource("feature_table.txt").openStream());
+        parseStyle = Options.getParserStyle("arc-eager");
+    }
+
+
+    /**
      * Convenience method with sensible defaults.
      */
     public Parser (File index, File model) throws IOException {
+        this(new FileInputStream(index), model);
+    }
+
+    public Parser (InputStream index, File model) throws IOException {
         this.index = Index.load(index);
         classifier = Options.getClassifier("linear-svm");
         classifier.load(model);

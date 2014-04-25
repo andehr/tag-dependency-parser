@@ -1,5 +1,6 @@
 package uk.ac.susx.tag.dependencyparser.parserstates;
 
+import uk.ac.susx.tag.dependencyparser.datastructures.IndexableQueue;
 import uk.ac.susx.tag.dependencyparser.datastructures.Queue;
 import uk.ac.susx.tag.dependencyparser.datastructures.Stack;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
@@ -19,19 +20,19 @@ import java.util.List;
 public class ParserStateOneStack implements ParserState {
 
     private Token root = Token.newRootToken();
-    private Queue<Token> buffer = new Queue<>();    // To be loaded with a sentence, and processed in order
-    private Stack<Token> stack = new Stack<>(root);    // To be loaded with items from the buffer to be processed
+    private IndexableQueue<Token> buffer = new IndexableQueue<>(); // To be loaded with a sentence, and processed in order
+    private Stack<Token> stack = new Stack<>(root);  // To be loaded with items from the buffer to be processed
 
 
     @Override
     public void initialise(List<Token> sentence) {
         root = Token.newRootToken();
         stack = new Stack<>(root);
-        buffer = new Queue<>(sentence);
+        buffer = new IndexableQueue<>(sentence);
     }
 
     public Stack<Token> getStack() { return stack; }
-    public Queue<Token> getBuffer() { return buffer; }
+    public IndexableQueue<Token> getBuffer() { return buffer; }
 
     /**
      * Check if the parser is in a terminal configuration.
