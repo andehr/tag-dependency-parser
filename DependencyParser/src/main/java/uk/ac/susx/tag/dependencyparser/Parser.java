@@ -42,14 +42,17 @@ public class Parser {
  * Prediction functionality
  */
 
-    /**
-     * Convenience method with all defaults.
-     */
     public Parser() throws IOException {
+        this("full_wsj_cmu_pos_stanford_dep");
+    }
+
+    /**
+     * Convenience method with all defaults. Get model from resources.
+     */
+    public Parser(String trainingData) throws IOException {
         File model = File.createTempFile("model", null);
         model.deleteOnExit();
 
-        String trainingData = "full_wsj_cmu_pos_stanford_dep";
         try (BufferedOutputStream modelStream = new BufferedOutputStream(new FileOutputStream(model)) ){
             Resources.copy(Resources.getResource(trainingData+"-model"), modelStream);
         }
