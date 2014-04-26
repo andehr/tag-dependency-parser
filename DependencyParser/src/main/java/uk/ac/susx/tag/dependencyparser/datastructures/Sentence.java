@@ -10,12 +10,18 @@ import java.util.Map;
  * list of tokens with appropriate IDs, so you can pass it to the parseSentence function of the parser.
  *
  *   Sentence sentence = new Sentence()
- *   for (Object o : listOfObjects) {
+ *   for (Object o : listOfObjects)
  *       sentence.add(o.FORM, o.POS);
- *   }
+ *
  *   parser.parseSentence(sentence);
  *
- *   Can do this if the objects only have the FORM attribute, or if it's a complete map of attributes.
+ * You can also do this if the objects only have the FORM attribute, or if it's a complete map of attributes, using
+ * the various add methods.
+ *
+ * NOTE: if you use the map of attributes, then "deprel" and "head" are reserved features that the Tokens know about.
+ *       So if you have some gold standard tokens (that already have their deprel and head attributes), then you don't
+ *       have to worry about the parser cheating. Because if the Token sees "deprel" or "head" in the attributes map
+ *       it will remove them and store them in a separate place ear-marked for gold standard.
  *
  * Created by Andrew D. Robertson on 18/04/2014.
  */

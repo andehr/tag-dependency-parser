@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * Represents a token being parsed. Generally, the creation and management of
  * attributes is handled internally, so these tokens aren't actually passed
- * to the parser by the user.
+ * to the parser by the user (see Sentence class).
  *
  * Typically a token is created from a map of attributes. So, the user would
  * pass in the equivalent of, for example :
@@ -17,16 +17,16 @@ import java.util.Map;
  *    "pos" : D
  *  }
  *
- *  These attributes can then be referenced in the feature table that specifies
- *  which features the parser will extract.
+ * These attributes can then be referenced in the feature table that specifies
+ * which features the parser will extract.
  *
- *  Typically, the user doesn't even create individual tokens like this. If you want to set up a list of Tokens
- *  to be parsed, create a Sentence object and use it's convenience methods to do the lifting for you (i.e.
- *  instantiating tokens with sensible IDs). Or read them from file to Token using the CoNLLReader class.
+ * Typically, the user doesn't even create individual tokens like this. If you want to set up a list of Tokens
+ * to be parsed, create a Sentence object and use it's convenience methods to do the lifting for you (i.e.
+ * instantiating tokens with sensible IDs). Or read them from file to Token using the CoNLLReader class.
  *
  * Notes:
  *   - Equality and hashing uses only the ID field. So is only valid when comparing tokens
- *     from the same sentence (since ID is unique within sentence only).
+ *     from the same sentence (since ID is unique within sentence only). This makes many things much easier.
  *
  * Created by Andrew D Robertson on 11/04/2014.
  */
@@ -38,7 +38,7 @@ public class Token {
     // Attributes from which features may be drawn
     private Map<String, String> attributes;
 
-    // Mid parse decisions:
+    // Mid parse decisions (can be accessed during feature extraction using addressing functions, see FeatureTable class)
     private Token head = null;
     private String deprel = null;
     private Token leftmostChild = null;
@@ -46,7 +46,7 @@ public class Token {
     private int lDeps = 0;
     private int rDeps = 0;
 
-    // Gold standard, if present.
+    // Gold standard, if present (this is where "head" and "deprel" attributes are moved if the Token finds them during instantiation
     private int goldHead = 0;
     private String goldDeprel = null;
 

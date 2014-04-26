@@ -100,9 +100,9 @@ public class StringIndexer {
     }
 
 
-    /*
-       JSON provides a more flexible and reusable serialisation here.
-     */
+/*
+   JSON provides a more flexible and reusable serialisation here.
+ */
 
     public void writeJson(JsonWriter writer) throws IOException {
         writer.beginObject();

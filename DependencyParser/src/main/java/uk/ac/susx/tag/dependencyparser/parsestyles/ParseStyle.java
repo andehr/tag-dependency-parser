@@ -14,7 +14,14 @@ import java.util.regex.Pattern;
  * The style governs what underlying data structures are used to represent the parser state,
  * and it governs what transitions the parser can perform.
  *
- * Choice of machine learning classifier is an entirely orthogonal issue.
+ * Choice of machine learning classifier is an entirely orthogonal issue. See classifiers package.
+ *
+ * Transitions should be set out in the following way:
+ *
+ *  - Each transitions have a set of pre-conditions that must be met for the transition to take place
+ *  - The transition should always return false if the transition is impossible, true otherwise
+ *  - The transition should have a boolean "perform" parameter, which when true, the transition is also executed rather
+ *    than just checked for feasibility.
  *
  * Created by Andrew D. Robertson on 11/04/2014.
  */
@@ -55,8 +62,8 @@ public abstract class ParseStyle {
 
         private static final Pattern splitter = Pattern.compile("\\|");
 
-        public String transitionName;
-        public String arcLabel;
+        public String transitionName; // Base type of transition
+        public String arcLabel;       // Optionally, the label assigned to an arc during this transition
 
         public Transition(String transitionName, String arcLabel) {
             this.transitionName = transitionName;
@@ -68,10 +75,19 @@ public abstract class ParseStyle {
             arcLabel = null;
         }
 
+        /**
+         * Return a representation of this Transition that can be indexed as a class for the classifier to
+         * choose. "interpretTransition" should be able to reconstruct the full original transition from
+         * this string.
+         */
         public String toString() {
             return arcLabel==null? transitionName : transitionName+"|"+arcLabel;
         }
 
+        /**
+         * Given the output of a Transition.toString(), instantiate a Transition
+         * instance from these details.
+         */
         public static Transition interpretTransition(String representation){
             if (representation.contains("|")) {
                 String[] transitionDefinition = splitter.split(representation);
@@ -84,11 +100,10 @@ public abstract class ParseStyle {
      * Collect data necessary for acquiring training transitions from a gold standard sentence.
      * This data is passed during calls to optimumTrainingTransition().
      *
-     * WARNING: Ensure that the training sentence contains the artificial root (see Token class),
-     *          That each Token has its gold standard head and deprel, and that the IDs of the
-     *          tokens go in order from 0 to N consistently (including ROOT as 0). Typically,
-     *          these assurances are put in place automatically using a factory method for
-     *          creating a sentence from a list of token attributes.
+     * WARNING: Ensure that the IDs of the tokens go in order from 1 to N consistently.
+     *          Ensure that each token has its gold standard relations marked.
+     *          Using the Sentence class with tokens that have "head" and "deprel" attributes
+     *          ensures this for you.
      */
     public TrainingData getTrainingData(List<Token> trainingSentence) {
         return new TrainingData(trainingSentence);
@@ -106,21 +121,23 @@ public abstract class ParseStyle {
         // Record of how many dependants each token should have.
         private Map<Token, Integer> dependantCounts;
 
-        public TrainingData(List<Token> trainingSentence) {
+        private TrainingData(List<Token> trainingSentence) {
             arcs = new HashMap<>();
             dependantCounts = new HashMap<>();
-            Token root = Token.newRootToken();
+            Token root = Token.newRootToken(); // Because hashing of Tokens is done by ID only (and all root tokens created in this manner have ID==0), this root token will equate to any root token that the parser uses when calling hasRelation() or hasAllDependantsAssigned(), which saves us having to enforce that the root is acquired from the parse state here.
 
             if (Token.hasAllGoldRelations(trainingSentence)){
-                for (Token token : trainingSentence) {
+                for (int i = 0; i < trainingSentence.size(); i++) {
+                    Token token = trainingSentence.get(i);
+                    if (token.getID()!=i+1) throw new RuntimeException("Training sentence has inconsistent IDs");
                     int headID = token.getGoldHead();
-                    Token head = headID == 0? root : trainingSentence.get(headID-1);
+                    Token head = headID == 0 ? root : trainingSentence.get(headID - 1);
                     arcs.put(token, head);
                     if (dependantCounts.containsKey(head))
-                        dependantCounts.put(head, 1+dependantCounts.get(head));
+                        dependantCounts.put(head, 1 + dependantCounts.get(head));
                     else dependantCounts.put(head, 1);
                 }
-            } else throw new RuntimeException("Training sentence doesn't have artificial root and/or all gold relations annotated.");
+            } else throw new RuntimeException("Training sentence doesn't have all gold relations annotated.");
         }
 
         /**

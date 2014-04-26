@@ -1,9 +1,6 @@
 package uk.ac.susx.tag.dependencyparser.datastructures;
 
-import com.google.common.collect.Lists;
-
 import java.util.Collection;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -97,7 +94,7 @@ public class IndexableQueue<E> {
 
     /**
      * Use this if you allowed the array to grow to massive proportions, and then removed a tonne of elements,
-     * if you want the underlying array to be reduced back down to twice the size of the remaining elements.
+     * if you want the underlying array to be reduced back down to expansionFactor*size of the remaining elements.
      */
     public void trim() {
         newElementArray(elements, startIndex, endIndex);

@@ -6,8 +6,12 @@ import java.util.LinkedList;
 /**
  * Simple FIFO data structure, implemented using doubly linked list.
  *
+ * (If you're doing a lot of indexing, then maybe IndexableQueue is best, since with a linkedlist
+ *  you have to walk through the list to get to an element)
+ *
  * Created by Andrew D. Robertson on 11/04/2014.
  */
+@Deprecated
 public class Queue<E>  {
 
     private LinkedList<E> elements;

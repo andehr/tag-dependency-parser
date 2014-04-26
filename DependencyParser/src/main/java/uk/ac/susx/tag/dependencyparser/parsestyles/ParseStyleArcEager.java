@@ -1,7 +1,6 @@
 package uk.ac.susx.tag.dependencyparser.parsestyles;
 
 import uk.ac.susx.tag.dependencyparser.datastructures.IndexableQueue;
-import uk.ac.susx.tag.dependencyparser.datastructures.Queue;
 import uk.ac.susx.tag.dependencyparser.datastructures.Stack;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 import uk.ac.susx.tag.dependencyparser.parserstates.ParserState;
