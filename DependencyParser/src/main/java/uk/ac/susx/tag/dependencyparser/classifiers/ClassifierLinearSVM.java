@@ -27,13 +27,13 @@ public class ClassifierLinearSVM implements Classifier {
         trainer.parseCommandline(options, trainingData, outputModel);  // Used for parsing out the options.
         try {
             Parser.printStatus("Reading in vectors to the classifier...");
-            trainer.readProblem(trainingData.getAbsolutePath());   // Read in training vectors
+            trainer.readProblem(trainingData.getAbsolutePath());
 
             Parser.printStatus("Performing training...");
-            model = Linear.train(trainer.getProblem(), trainer.getParameter()); // Perform training
+            model = Linear.train(trainer.getProblem(), trainer.getParameter());
 
             Parser.printStatus("Saving SVM model...");
-            save(outputModel);  // Save model
+            save(outputModel);
         } catch (IOException | InvalidInputDataException e) {
             e.printStackTrace();
             throw new RuntimeException("Problem with loading training data.", e);

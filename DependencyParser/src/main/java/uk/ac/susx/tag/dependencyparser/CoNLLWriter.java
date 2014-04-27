@@ -10,7 +10,13 @@ import java.io.OutputStreamWriter;
 import java.util.List;
 
 /**
- * Created with IntelliJ IDEA.
+ * Mostly used for evaluation purposes.
+ *
+ * Will output in the format expect by CoNLL shared task (2009 I think?).
+ * Mostly used for comparing performance against the WSJ.
+ *
+ * TODO: allowing formatting of output, or implement some other sensible writer.
+ *
  * User: Andrew D. Robertson
  * Date: 24/04/2014
  * Time: 11:28

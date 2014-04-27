@@ -18,11 +18,13 @@ import java.util.List;
  */
 public class ParserStateOneStack implements ParserState {
 
-    private Token root = Token.newRootToken();
+    private Token root = Token.newRootToken();  // Pointer to artificial root token, so getRootToken() is efficient.
     private IndexableQueue<Token> buffer = new IndexableQueue<>(); // To be loaded with a sentence, and processed in order
     private Stack<Token> stack = new Stack<>(root);  // To be loaded with items from the buffer to be processed
 
-
+    /**
+     * Initialise the parser with a new sentence.
+     */
     @Override
     public void initialise(List<Token> sentence) {
         root = Token.newRootToken();
@@ -53,7 +55,8 @@ public class ParserStateOneStack implements ParserState {
      *  - buf[0] refers to the next token on the buffer queue
      *  - stk[0] refers to the top item on the stack.
      *
-     * WARNING: returns null when index is out of bounds, instead of throwing an exception.
+     * WARNING: returns null when index is out of bounds, instead of throwing an exception (more convenient for feature
+     *          extraction).
      */
     @Override
     public Token getToken(String structureType, int address) {

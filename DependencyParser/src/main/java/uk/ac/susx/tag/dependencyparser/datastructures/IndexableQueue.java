@@ -6,8 +6,8 @@ import java.util.NoSuchElementException;
 /**
  * A queue which allows efficient additions to either end, and can still be indexed in constant time.
  *
- * The queue is implemented with an array that is twice (expansionFactor) as big as the collection with which it was initialised
- * (or size 20 if no initialised collection).
+ * The queue is implemented with an array that is twice (or expansionFactor) as big as the collection with which it
+ * was initialised (or size 20 with no initialised collection).
  *
  * The actual values are stored in the middle of the array (the actual values are centred on the middle of the array,
  * they don't start in the middle):
@@ -23,10 +23,10 @@ import java.util.NoSuchElementException;
  */
 public class IndexableQueue<E> {
 
-    private Object[] elements;
-    private int startIndex;
-    private int endIndex;
-    private int expansionFactor;
+    private Object[] elements;   // The array of length size()*expansionFactor. It contains the queue elements in the middle.
+    private int startIndex;      // The index in *elements* where the elements actually start
+    private int endIndex;        // The index in *elements* where the elements actually start
+    private int expansionFactor; // The factor which influences the size of *elements*. A factor of 2 implies that the size of *elements* will be twice the number of actual elements.
 
     public IndexableQueue() {
         this(2);
@@ -46,15 +46,25 @@ public class IndexableQueue<E> {
         newElementArray(elements.toArray());
     }
 
-
+    /**
+     * Return the first element without removing it.
+     */
     public E peek() {
         return get(0);
     }
 
+    /**
+     * Return the element specified by *index* (0 is the start of the queue), without removal.
+     */
     public E get(int index) {
         return (E)elements[startIndex+index];
     }
 
+    /**
+     * Add an element to the end of the queue.
+     * Note: if there is no more room at the end of the array, then a bigger array is created, and the old values
+     *       are copied across.
+     */
     public void push(E element) {
         if (endIndex >= elements.length){
             newElementArray(elements, startIndex, endIndex);
@@ -63,6 +73,10 @@ public class IndexableQueue<E> {
         endIndex++;
     }
 
+    /**
+     * Remove and return the first element of the queue.
+     * Note: this does not shrink the array, see trim().
+     */
     public E pop() {
         if (size() > 0) {
             E element = (E)elements[startIndex];
@@ -72,6 +86,11 @@ public class IndexableQueue<E> {
         } else throw new NoSuchElementException();
     }
 
+    /**
+     * Add an element to the front of the queue.
+     * Note: if there is no more room at the start of the array, then a bigger array is created, and the old values
+     *       are copied across.
+     */
     public void addToFront(E element) {
         if (startIndex == 0) {
             newElementArray(elements, startIndex, endIndex);
@@ -79,11 +98,16 @@ public class IndexableQueue<E> {
         elements[--startIndex] = element;
     }
 
-
+    /**
+     * This returns the number of elements that have been added to the queue.
+     */
     public int size() {
         return endIndex - startIndex;
     }
 
+    /**
+     * Return true if there are no elements in the queue.
+     */
     public boolean isEmpty(){
         return startIndex == endIndex;
     }

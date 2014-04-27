@@ -49,7 +49,7 @@ import java.util.regex.Pattern;
  *
  *  "head" and "deprel" are reserved words for listing the gold standard dependency relations for tokens. If your
  *  format includes these terms then those attributes will automatically be loaded into the Token object's "goldHead" and
- *  "goldDeprel" fields.
+ *  "goldDeprel" fields (so that the parser cannot cheat during prediction and/or the information is available during training).
  *
  * Created by Andrew D. Robertson on 16/04/2014.
  */
@@ -79,6 +79,31 @@ public class CoNLLReader implements AutoCloseable, Iterator<List<Token>>{
         }
         readNextSentence();
     }
+
+
+    @Override
+    public boolean hasNext() {
+        return nextSentence!=null && nextSentence.size() > 0;
+    }
+
+    @Override
+    public List<Token> next() {
+        if (hasNext()) {
+            List<Token> toReturn = nextSentence;
+            try {
+                readNextSentence();
+            } catch (IOException e) {
+                nextSentence = null;
+            }
+            return toReturn;
+        } else throw new NoSuchElementException();
+    }
+
+    @Override
+    public void remove() {
+        throw new UnsupportedOperationException();
+    }
+
 
     @Override
     public void close() throws IOException {
@@ -115,29 +140,5 @@ public class CoNLLReader implements AutoCloseable, Iterator<List<Token>>{
         }
         nextSentence = sentence;
         if(line == null) reader.close();
-    }
-
-
-    @Override
-    public boolean hasNext() {
-        return nextSentence!=null && nextSentence.size() > 0;
-    }
-
-    @Override
-    public List<Token> next() {
-        if (hasNext()) {
-            List<Token> toReturn = nextSentence;
-            try {
-                readNextSentence();
-            } catch (IOException e) {
-                nextSentence = null;
-            }
-            return toReturn;
-        } else throw new NoSuchElementException();
-    }
-
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException();
     }
 }

@@ -25,10 +25,10 @@ import java.util.regex.Pattern;
  *   - Each line in the file that is blank or starts with a # is ignored.
  *   - Otherwise each line specifies one or more features to be extracted from one or more tokens.
  *   - Which features or tokens appear on a line is largely down to the user's logic (i.e. grouping features which all
- *     related to the same token).
+ *     relate to the same token).
  *   - Each line is of the following format:
  *     - Each line is divided into columns by a colon (:)
- *     - The first column is for a whitespace separated list of token address (1 or more)
+ *     - The first column is for a whitespace separated list of token addresses (1 or more)
  *     - Each subsequent column (1 or more) is a feature to be extracted from the tokens at those addresses
  *     - A token address consists firstly of direct address to a part of the parser state (see ParserState class), e.g.
  *         stk[0]
@@ -142,7 +142,7 @@ public class FeatureTable {
      * Represents a definition line within the specification file. Consists of 1 or more address with 1 or more
      * feature definitions.
      */
-    public static class FeatureDefinitionLine {
+    private static class FeatureDefinitionLine {
 
         public List<TokenAddress> addresses;
         public List<FeatureDefinition> featureDefs;
@@ -165,7 +165,7 @@ public class FeatureTable {
      * Represents the definition of a single feature. I.e. what attribute of the token are we interested in? Do we
      * want to concatenate the features together?
      */
-    public static class FeatureDefinition {
+    private static class FeatureDefinition {
 
         private String featureType;
         private List<String> args;
@@ -226,7 +226,7 @@ public class FeatureTable {
      * Represents the location of a token in the parser state. ParserStates themselves determine what the user can
      * access through feature extraction.
      */
-    public static class TokenAddress {
+    private static class TokenAddress {
 
         private String structureType;
         private int address;
