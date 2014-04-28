@@ -47,9 +47,9 @@ public class Sentence extends ArrayList<Token> {
         return s;
     }
 
-    public static Sentence createFromPoSandFormBearingTokens(Iterable<PoSandFormPropertyBearing> tokens){
+    public static Sentence createFromPoSandFormBearingTokens(Iterable<PoSandFormBearing> tokens){
         Sentence s = new Sentence();
-        for(PoSandFormPropertyBearing token : tokens)
+        for(PoSandFormBearing token : tokens)
             s.add(token.getForm(), token.getPos());
         return s;
     }
@@ -74,7 +74,7 @@ public class Sentence extends ArrayList<Token> {
     }
 
 
-    public static interface PoSandFormPropertyBearing {
+    public static interface PoSandFormBearing {
 
         public String getForm();
 
