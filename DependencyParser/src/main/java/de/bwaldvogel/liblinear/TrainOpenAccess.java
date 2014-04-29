@@ -1,7 +1,5 @@
 package de.bwaldvogel.liblinear;
 
-import com.google.common.base.Joiner;
-
 import java.io.File;
 import java.io.IOException;
 
@@ -39,10 +37,13 @@ public class TrainOpenAccess extends Train {
     }
 
     /**
-     * This is a workaround to get the ability to parse option switches sensibly. Options are provided just how
-     * they would be at command line. But if you read the source and see how I'm calling this thing in ClassifierLinearSVM,
-     * you'll see that passing those files fills no particular purpose other than making the command line switch
-     * function play nice, because I'm separately calling readProblem() with trainingData, and saveModel with model.
+     * This is a workaround to be able to making use of liblinear's option parsing code, which is hidden away in a
+     * package-private method that is only applied to the commandline execution.
+     * Options are provided just how they would be at command line. But if you read the source and see how I'm calling
+     * this thing in ClassifierLinearSVM, you'll see that passing those files fills no particular purpose other than
+     * making the command line switch function play nice, because I'm separately calling readProblem() with trainingData,
+     * and saveModel with model. We could possibly parse the options ourselves, but the potential for introducing bugs
+     * parsing the possible options for an entire SVM package would be crazy-much.
      *
      * UGH.
      */

@@ -9,7 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a two-way mapping between strings and IDs.
+ * Represents an efficient two-way mapping between strings and IDs.
+ *   - Retrieving strings using IDs is Θ(1) (backed by an array)
+ *   - Retrieving IDs using strings is whatever hashmap retrieval in fastutil is... Probably average case Θ(1) with an
+ *     insanely unlikely worst case Θ(n) (this would require the hashes to have collided for all elements)
  *
  * The IDs start from 1 by default (avoids some nasty LIBLINEAR and LIBSVM limitations; indexing from 0 causes unexplained crashes).
  *
@@ -100,9 +103,9 @@ public class StringIndexer {
     }
 
 
-/*
-   JSON provides a more flexible and reusable serialisation here.
- */
+/*****************************
+ * JSON provides a more flexible and reusable serialisation here.
+ *****************************/
 
     public void writeJson(JsonWriter writer) throws IOException {
         writer.beginObject();

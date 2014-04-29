@@ -1,5 +1,6 @@
 package uk.ac.susx.tag.dependencyparser.parsestyles;
 
+import uk.ac.susx.tag.dependencyparser.Options;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 import uk.ac.susx.tag.dependencyparser.parserstates.ParserState;
 
@@ -23,9 +24,11 @@ import java.util.regex.Pattern;
  *  - The transition should have a boolean "perform" parameter, which when true, the transition is also executed rather
  *    than just checked for feasibility.
  *
+ * IMPORTANT NOTE: Subclasses should be stateless.
+ *
  * Created by Andrew D. Robertson on 11/04/2014.
  */
-public abstract class ParseStyle {
+public abstract class ParseStyle implements Options.Option {
 
     /**
      * Return the appropriate parser state.
@@ -45,13 +48,6 @@ public abstract class ParseStyle {
      * with a training sentence, ascertain the optimum next transition.
      */
     public abstract Transition optimumTrainingTransition(ParserState s, TrainingData data);
-
-    /**
-     * Return a String representing the style of parsing. E.g. "arc-eager". This allows
-     * the user to specify a style (or extent the package with a new style). See the
-     * Options class.
-     */
-    public abstract String key();
 
     /**
      * Class representing the definition of a transition. A transition has a name and

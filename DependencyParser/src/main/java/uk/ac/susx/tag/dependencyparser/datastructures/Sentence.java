@@ -50,14 +50,14 @@ public class Sentence extends ArrayList<Token> {
     public static Sentence createFromPoSandFormBearingTokens(Iterable<? extends PoSandFormBearing> tokens){
         Sentence s = new Sentence();
         for(PoSandFormBearing token : tokens)
-            s.add(token.getForm(), token.getPos());
+            s.add(token);
         return s;
     }
 
     public static Sentence createFromAttributeMapBearingTokens(Iterable<? extends AttributeMapBearing> tokens){
         Sentence s = new Sentence();
         for(AttributeMapBearing token : tokens)
-            s.add(token.getAtts());
+            s.add(token);
         return s;
     }
 
@@ -73,6 +73,13 @@ public class Sentence extends ArrayList<Token> {
         super.add(new Token(size() + 1, attributes));
     }
 
+    public void add(PoSandFormBearing token){
+        add(token.getForm(), token.getPos());
+    }
+
+    public void add(AttributeMapBearing token){
+        add(token.getAtts());
+    }
 
     public static interface PoSandFormBearing {
 

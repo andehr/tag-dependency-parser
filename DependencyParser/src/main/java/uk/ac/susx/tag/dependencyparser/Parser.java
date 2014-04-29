@@ -1,6 +1,5 @@
 package uk.ac.susx.tag.dependencyparser;
 
-import com.google.common.collect.Ordering;
 import com.google.common.io.Resources;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
@@ -10,40 +9,42 @@ import uk.ac.susx.tag.dependencyparser.datastructures.StringIndexer;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 import uk.ac.susx.tag.dependencyparser.parserstates.ParserState;
 import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
+import uk.ac.susx.tag.dependencyparser.transitionselectionmethods.SelectionMethod;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The main top-level execution stage.
  *
- * Functions for training and parsing are here. See method comments.
+ * Functions for training and parsing are here. See method comments. The class is divided into 3 selections:
+ *  1. Parsing/Prediction functionality
+ *  2. Training functionality
+ *  3. General functionality
  *
- * If you're TRAINING a parser, look for a static train method in the lower half of this class.
- * There is one train method that has all the functionality, and a bunch of others with fewer or different arguments
- * that assign sensible defaults and delegate to the main train method. Each train method saves any relevant model data,
- * and also returns an instance of the trained Parser.
+ * TRAINING:
+ *  Look for a static train method in the lower half of this class. There is one train method that has all the
+ *  functionality, and a bunch of others with fewer or different arguments that assign sensible defaults and delegate
+ *  to the main train method. Each train method saves any relevant model data, and also returns an instance of the
+ *  trained Parser.
  *
- * If you're PARSING something with a trained parser, then you should use one of the classes constructors with the
- * appropriate arguments in the top half of the class. Then pass your data to a "parseSentence" or "parseFile" method.
+ * PARSING:
+ *  If you're PARSING something with a trained parser, then you should use one of the constructors with the
+ *  appropriate arguments in the top half of the class. Then pass your data to a "parseSentence" or "parseFile" method.
+ *
+ *
+ * CONCURRENCY NOTE:
+ *  I have made every effort to ensure that "parseSentence" methods on this class can be call concurrently, but this
+ *  functionality remains to be tested. TODO
  *
  * Created by Andrew D. Robertson on 13/04/2014.
  */
 public class Parser {
 
-    // If the parser is done with a sentence, and left tokens without a head, then the ROOT token is assigned as their
+    // If the parser is done with a sentence, and left tokens without a head, then the ROOT token is assigned as the
     // head with the relation below. This is consistent with the Stanford dependency scheme.
     private static final String rootRelation = "root";
 
@@ -57,22 +58,37 @@ public class Parser {
     private Classifier classifier;     // This is the machine learning model used to predict the correct transition to make.
     private FeatureTable featureTable; // This represents the specification of what happens during feature extraction.
     private ParseStyle parseStyle;     // This represents how parsing is to be accomplished (i.e. what datastructure, what transitions)
+    private SelectionMethod selectionMethod; // This represents how we use the classifier output to select the next transition
 
 
 
 
-/****************************
+/***********************************************************************************************************************
+ *
  * Prediction functionality
- ****************************/
+ *
+ *   This section consists of constructors and parse methods. In order to get parsing, you'll construct the Parser
+ *   instance, then call one of the parse methods.
+ *
+ *   The responsibility of the constructor is to establish the type of parsing, classifier, and transition selection
+ *   methods, and read in the feature/transition index and parser model.
+ *
+ *   Then the parse methods use this data to slap dependencies on tokens.
+ *
+ *   Alternatively, you can look at the training section, which trains a parser from scratch, and returns a constructed
+ *   parser as its output. That parser will be ready to receive calls to its parse methods.
+ *
+ ***********************************************************************************************************************/
 
     /**
-     * All defaults.
+     * All Defaults:
      *
-     * Defaults:
-     *
-     *  feature table = (as found in resources) mostly PoS based, with some deprel and form.
+     *  feature table = (as found in resources) mostly PoS based, with some deprel and form. Enough to evaluate at
+     *                  around 90% unlabelled attachment score if trained on the training section of WSJ and tested
+     *                  on the development. Bear in mind that the default model for this parser is trained on ALL of WSJ.
      *  classifier  = linear svm
      *  parse style = arc eager
+     *  transition selection method = confidence-based (using classifier's decision scores)
      *  model = training on all of WSJ, using CMU PoS tags and Stanford dependencies.
      */
     public Parser() throws IOException {
@@ -85,6 +101,8 @@ public class Parser {
      * trainingData+"-index", and the model with name: trainingData+"-model".
      */
     public Parser(String trainingData) throws IOException {
+
+        // Get type and load classifier model
         File model = File.createTempFile("model", null);
         model.deleteOnExit();
 
@@ -95,9 +113,18 @@ public class Parser {
         classifier.load(model);
         if (!model.delete()) System.err.print("WARNING: model temp file was not deleted: "+ model.getAbsolutePath());
 
+        // Load and set index to read only
         this.index = Index.load(Resources.getResource(trainingData+"-index").openStream());
+        this.index.setReadOnly(true);
+
+        // Load feature table
         featureTable = new FeatureTable(Resources.getResource("feature_table.txt").openStream());
+
+        // Ascertain parse style
         parseStyle = Options.getParserStyle("arc-eager");
+
+        // Ascertain transition selection method
+        selectionMethod = Options.getSelectionMethod("confidence");
     }
 
     /**
@@ -114,11 +141,22 @@ public class Parser {
      *  classifiers try to support this).
      */
     public Parser (InputStream index, File model) throws IOException {
+        // Load and set Index to read-only
         this.index = Index.load(index);
+        this.index.setReadOnly(true);
+
+        // Get type and load classifier
         classifier = Options.getClassifier("linear-svm");
         classifier.load(model);
+
+        // Load feature table
         featureTable = new FeatureTable(Resources.getResource("feature_table.txt").openStream()); // The FeatureTable ensures that resource is closed.
+
+        // Ascertain parse style
         parseStyle = Options.getParserStyle("arc-eager");
+
+        // Ascertain transition selection method
+        selectionMethod = Options.getSelectionMethod("confidence");
     }
 
     /**
@@ -133,15 +171,26 @@ public class Parser {
                   File model,
                   File featureTable,
                   String classifierType,
-                  String parseStyle) throws IOException {
+                  String parseStyle,
+                  String transitionSelectionMethod) throws IOException {
 
+        // Load and set Index to read-only
         this.index = Index.load(index);
+        this.index.setReadOnly(true);
+
+        // Get type and load classifier
         classifier = Options.getClassifier(classifierType);
         classifier.load(model);
-        this.featureTable = new FeatureTable(featureTable);
-        this.parseStyle = Options.getParserStyle(parseStyle);
-    }
 
+        // Load feature table
+        this.featureTable = new FeatureTable(featureTable);
+
+        // Ascertain parse style
+        this.parseStyle = Options.getParserStyle(parseStyle);
+
+        // Ascertain transition selection method
+        this.selectionMethod = Options.getSelectionMethod(transitionSelectionMethod);
+    }
 
 
     public void parseFile(File data, File output) throws IOException {
@@ -207,7 +256,7 @@ public class Parser {
             ParseStyle.Transition t = index.getTransition(classifier.predict(v, classifierOptions, decisionScores));
 
             // Apply the best transition that we can, given what the classifier suggests, and the decision scores it outputs
-            applyBestTransition(t, state, decisionScores, transitionSelectionMethod);
+            selectionMethod.applyBestTransition(t, decisionScores, state, this);
         }
 
         // Any token whose head has been left unassigned by the parser, is automatically assigned to the root.
@@ -220,78 +269,19 @@ public class Parser {
         return sentence;
     }
 
-    /**
-     * Select and execute the chosen method of picking the best transition. If one wanted to come up with another way
-     * of doing this, a function similar to "confidenceMethod" would be created, and the case for it would be added
-     * to the switch in this method.
-     */
-    private void applyBestTransition(ParseStyle.Transition classifierRecommends, ParserState state, Int2DoubleMap decisionScores, String method) {
-        switch (method) {
-            case "confidence": confidenceMethod(classifierRecommends, state, decisionScores); break;
-            default: throw new RuntimeException("unrecognised method for selecting  best transition.");
-        }
-    }
 
-    /**
-     * Procedure:
-     *   1. Try the transition that the classifier recommends
-     *   2. If that is impossible, find transition of each type that got the largest positive number as its score.
-     *   3. Try the best of each type from best to worst. (A good parse style would have a transition that is always
-     *      possible in a non-terminal state, so one of these should work. If it don't throw an exception).
-     *
-     *   This method is sensible for dealing with the output of the Liblinear SVM package, as far as I know. Each score
-     *   represents how far the decision was from the margin, so a bigger score is better because the decision was
-     *   easier.
-     *
-     *   Each score represents the outcome of a 2 way classification: the transition of interest versus all other transitions.
-     *   A positive number is a classification in favour of the transition of interest.
-     */
-    private void confidenceMethod(ParseStyle.Transition classifierRecommends, ParserState state, Int2DoubleMap decisionScores){
-        // Try the transition that the classifier thinks is best.
-        if (parseStyle.transition(state, classifierRecommends, true)) return;
-
-        // If the transition is not possible, then select the next best based on the decision scores returned from the classifier
-
-        Map<String, Integer> bestIDPerBaseTrans = new HashMap<>();   // Transition ID --> Transition name (i.e. the base transition type without any label, e.g. "leftArc" instead of "leftArc|amod").
-        Map<String, Double> bestScorePerBaseTrans = new HashMap<>(); // Transition name --> best score for this transition type
-
-        // First we find the best transition (the one the classifier was most sure about) for each DISTINCT type of transition, e.g. the best right arc, the best left arc,...
-        for(Int2DoubleMap.Entry entry : decisionScores.int2DoubleEntrySet()) {
-            // Resolve the ID to the actual transition.
-            ParseStyle.Transition t = index.getTransition(entry.getIntKey());
-            // If this beats the current best score for this type of transition, then record new best
-            if (!bestScorePerBaseTrans.containsKey(t.transitionName) || entry.getDoubleValue() > bestScorePerBaseTrans.get(t.transitionName)) {
-                bestScorePerBaseTrans.put(t.transitionName, entry.getDoubleValue());
-                bestIDPerBaseTrans.put(t.transitionName, entry.getIntKey());
-            }
-        }
-        // Sort the set of distinct arcs by their score, and try them best to worst to see which one is possible.
-        // Currently the best overall transition (the one that the classifier suggested is impossible) will be tried again here. But that's no biggy.
-        for (Map.Entry<String, Double> entry : new ScoredTransitionTypeOrdering().reverse().immutableSortedCopy(bestScorePerBaseTrans.entrySet())){
-            if(parseStyle.transition(state, index.getTransition(bestIDPerBaseTrans.get(entry.getKey())), true))
-                return;
-        }
-        // If we've reached this point, then all types of transition have been tried and none were possible
-        throw new RuntimeException("No transition was possible. This should be impossible. Perhaps the parse style was implemented incorrectly.");
-    }
-
-    /**
-     * Ordering for sorting a list of entries by their values.
-     */
-    private static class ScoredTransitionTypeOrdering extends Ordering<Map.Entry<String,Double>> {
-        @Override
-        public int compare(Map.Entry<String, Double> entry1, Map.Entry<String, Double> entry2) {
-            return entry1.getValue().compareTo(entry2.getValue());
-        }
-    }
-
-
-/*
+/***********************************************************************************************************************
+ *
  * Training functionality.
- */
+ *
+ *   All of the methods in this section train a parser from scratch, save the parser's index and model files, and
+ *   return the trained parser as their output.
+ *
+ ***********************************************************************************************************************/
 
     /**
      * Convenience method with sensible defaults.
+     * Allows specification of just the training file.
      */
     public static Parser train(File trainingData) throws IOException {
         File index = new File(trainingData.getAbsolutePath()+"-index");
@@ -303,11 +293,13 @@ public class Parser {
                      model,
                      "-s 4 -c 0.1 -e 0.1 -B -1",
                      "linear-svm",
-                     "arc-eager");
+                     "arc-eager",
+                     "confidence");
     }
 
     /**
      * Convenience method with sensible defaults.
+     * Allows specification of just the training file and the file that specifies how feature extraction is to be done.
      */
     public static Parser train(File trainingData, File featureTable) throws IOException {
 
@@ -316,12 +308,17 @@ public class Parser {
         return train(trainingData, "id, form, pos, head, deprel", new FeatureTable(featureTable), index, model,
                      "-s 4 -c 0.1 -e 0.1 -B -1",
                      "linear-svm",
-                     "arc-eager");
+                     "arc-eager",
+                     "confidence");
     }
 
     /**
-     * Train from a file instead of java object. The file should be in a vaguely CoNLL format (see CoNLLReader class).
-     * See other train method for descriptions of all parameters.
+     * The key differences between the last 3 fully-parameterised training methods (including this) is the type of the
+     * object being used to pass in the training data.
+     *
+     * Here you training from a file, whilst specifying how that file is laid out using the dataFormat parameter.
+     * (see CoNLLReader class).
+     *
      * @param trainingData The file from which to train.
      * @param dataFormat The formatting string passed to the CoNLL Reader (see CoNLLReader class).
      */
@@ -332,15 +329,20 @@ public class Parser {
                                File modelOutput,
                                String classifierOptions,
                                String classifierType,
-                               String parseStyle) throws IOException {
+                               String parseStyle,
+                               String transitionSelectionMethod) throws IOException {
 
         try (CoNLLReader reader = new CoNLLReader(trainingData, dataFormat))  {
-            return train(reader, featureTable, indexOutput, modelOutput, classifierOptions, classifierType, parseStyle);
+            return train(reader, featureTable, indexOutput, modelOutput, classifierOptions, classifierType, parseStyle, transitionSelectionMethod);
         }
     }
 
     /**
-     * Provide iterable format support for training sentences.
+     * The key differences between the last 3 fully-parameterised training methods (including this) is the type of the
+     * object being used to pass in the training data.
+     *
+     * Here you provide an Iterable object over Lists of tokens (where each list is a sentence), having read-in the
+     * tokens yourself somehow.
      */
     public static Parser train(Iterable<List<Token>> trainingSentences,
                                FeatureTable featureTable,
@@ -348,13 +350,18 @@ public class Parser {
                                File modelOutput,
                                String classifierOptions,
                                String classifierType,
-                               String parseStyle) throws IOException {
-        return train(trainingSentences.iterator(), featureTable, indexOutput, modelOutput, classifierOptions, classifierType, parseStyle);
+                               String parseStyle,
+                               String transitionSelectionMethod) throws IOException {
+        return train(trainingSentences.iterator(), featureTable, indexOutput, modelOutput, classifierOptions, classifierType, parseStyle, transitionSelectionMethod);
     }
 
     /**
-     * Train a new parser. The relevant files are automatically saved, but the trained parser is also returned from this
-     * function.
+     * The key differences between the last 3 fully-parameterised training methods (including this) is the type of the
+     * object being used to pass in the training data.
+     *
+     * Here you provide an Iterator over lists of tokens (where each list is a sentence), having read-in the
+     * tokens yourself somehow.
+     *
      * @param trainingSentences Collection of sentences, where each sentence is a properly formatted list of Tokens
      *                          as the Token.buildSentence() function would produce. I.e. with the first token being
      *                          the root, and the gold standard fields assigned. This can be done from CoNLL format
@@ -365,6 +372,8 @@ public class Parser {
      * @param classifierOptions Options to pass to the classifier
      * @param classifierType The type of classifier to use (see classifiers package)
      * @param parseStyle The style of parsing to be performed (see parserstyles package)
+     * @param transitionSelectionMethod How to select the best transition given classifier output (applicable in the finished parser,
+     *                                  not actually used in training, but allows this method to return a full parser as output)
      */
     public static Parser train(Iterator<List<Token>> trainingSentences,
                                FeatureTable featureTable,
@@ -372,12 +381,14 @@ public class Parser {
                                File modelOutput,
                                String classifierOptions,
                                String classifierType,
-                               String parseStyle) throws IOException {
+                               String parseStyle,
+                               String transitionSelectionMethod) throws IOException {
 
         // Use private constructor (see below) to make empty untrained parser
         Parser parser = new Parser(classifierType,
                                    featureTable==null? new FeatureTable(Resources.getResource("feature_table.txt").openStream()) : featureTable,
-                                   parseStyle);
+                                   parseStyle,
+                                   transitionSelectionMethod);
 
         // First convert the training data into feature vectors and put in temporary file
 
@@ -423,25 +434,44 @@ public class Parser {
 
         printStatus("Done.");
 
+        // Ensure that no further modifications can be made to the parser's index, this should allow concurrent calling of parse methods.
+        parser.index.setReadOnly(true);
+
         // Return the trained parser
         return parser;
     }
 
-    private Parser(String classifierType, FeatureTable featureTable, String parseStyle) throws IOException {
+    /**
+     * Used only during training in order to make an incomplete parser that is then trained to completeness before its
+     * index is set to read-only manually.
+     */
+    private Parser(String classifierType, FeatureTable featureTable, String parseStyle, String transitionSelectionMethod) throws IOException {
         this.index = new Index();
         this.classifier = Options.getClassifier(classifierType);
         this.featureTable = featureTable;
         this.parseStyle = Options.getParserStyle(parseStyle);
+        this.selectionMethod = Options.getSelectionMethod(transitionSelectionMethod);
     }
 
 
-/*************************
- * General functionality
- *************************/
 
-    private SparseBinaryVector getFeatureVector(ParserState state) {
-        return getFeatureVector(state, null);
-    }
+
+/***********************************************************************************************************************
+ *
+ *  General functionality (including main method)
+ *
+ ***********************************************************************************************************************/
+
+    /**
+     * The ParseStyle is used for actually checking the feasibility of and performing transitions.
+     */
+    public ParseStyle getParseStyle(){ return parseStyle; }
+
+    /**
+     * The Index is used for indexing and de-indexing transitions and features.
+     */
+    public Index getIndex() { return index; }
+
 
     /**
      * Extract a feature vector from the current parse state. If the StringIndexer argument is not null, then this
@@ -468,20 +498,33 @@ public class Parser {
         } return v;
     }
 
+    private SparseBinaryVector getFeatureVector(ParserState state) {
+        return getFeatureVector(state, null);
+    }
+
+    /**
+     * Write a message to standard output with the date and time prefixed.
+     */
     public static void printStatus(String message) {
         System.out.println("<" + new Date() + ">: " + message);
     }
 
+
+    /**
+     * Run tests from command line with default settings.
+     */
     public static void main(String[] args) throws Exception {
         if (args.length < 1) throw new RuntimeException("Specify the path to the training data.");
 
+        // 1. Train cycle with all defaults, supply only the training data file path.
         if (args.length == 1)
             // trainingFile
             train(new File(args[0]));
 
-        else if (args.length == 4)
-            // indexFile modelFile fileToBeParsed outputFile
-            new Parser(new File(args[0]), new File(args[1])).parseFile(new File(args[2]), new File(args[3]));
+        // 2. Predict cycle on a file. All defaults, supply input file and output file path.
+        else if (args.length == 2)
+            // fileToBeParsed outputFile
+            new Parser().parseFile(new File(args[0]), new File(args[1]));
 
         else throw new RuntimeException("Unrecognised arguments");
     }

@@ -21,7 +21,7 @@ import java.util.Map;
  * which features the parser will extract.
  *
  * Typically, the user doesn't even create individual tokens like this. If you want to set up a list of Tokens
- * to be parsed, create a Sentence object and use it's convenience methods to do the lifting for you (i.e.
+ * to be parsed, create a Sentence object and use its convenience methods to do the lifting for you (i.e.
  * instantiating tokens with sensible IDs). Or read them from file to Token using the CoNLLReader class.
  *
  * Notes:

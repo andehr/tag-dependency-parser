@@ -5,13 +5,7 @@ import com.google.gson.stream.JsonWriter;
 import uk.ac.susx.tag.dependencyparser.datastructures.StringIndexer;
 import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 
 /**
  * Tracks the mappings between:
@@ -27,11 +21,16 @@ public class Index {
 
     private StringIndexer features;
     private StringIndexer transitions;
+    private transient boolean readOnly;
 
     public Index() {
         features = new StringIndexer();
         transitions = new StringIndexer();
+        readOnly = false;
     }
+
+    public void setReadOnly(boolean readOnly) { this.readOnly = readOnly;}
+    public boolean isReadOnly() { return readOnly; }
 
     public StringIndexer getFeatureIndexer() {return features;}
     public StringIndexer getTransitionIndexer() {return transitions;}
@@ -40,6 +39,7 @@ public class Index {
      * Get the ID for a particular transition. Use boolean for deciding whether to add new ID if one aint present.
      */
     public int getTransitionID(ParseStyle.Transition transition, boolean addIfNotPresent) {
+        if (readOnly && addIfNotPresent) throw new RuntimeException("Trying to add an ID to an Index marked as read-only. The index is read-only during parse-time to enable concurrency.");
         return transitions.getIndex(transition.toString(), addIfNotPresent);
     }
 
@@ -61,6 +61,7 @@ public class Index {
      * Get ID of a particular feature. Use switch to determine if new ID is added if one aint present.
      */
     public int getFeatureID(String feature, boolean addIfNotPresent) {
+        if (readOnly && addIfNotPresent) throw new RuntimeException("Trying to add an ID to an Index marked as read-only. The index is read-only during parse-time to enable concurrency.");
         return features.getIndex(feature, addIfNotPresent);
     }
 

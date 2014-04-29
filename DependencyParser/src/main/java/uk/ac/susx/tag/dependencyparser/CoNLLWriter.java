@@ -2,11 +2,7 @@ package uk.ac.susx.tag.dependencyparser;
 
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.util.List;
 
 /**

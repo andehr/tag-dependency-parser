@@ -1,6 +1,7 @@
 package uk.ac.susx.tag.dependencyparser.classifiers;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import uk.ac.susx.tag.dependencyparser.Options;
 import uk.ac.susx.tag.dependencyparser.datastructures.SparseBinaryVector;
 
 import java.io.File;
@@ -9,7 +10,7 @@ import java.io.IOException;
 /**
  * Created by Andrew D. Robertson on 13/04/2014.
  */
-public interface Classifier {
+public interface Classifier extends Options.Option {
 
     /**
      * Train the classifier on a file of vectors (in the same format as Libsvm + liblinear expects.
@@ -30,10 +31,4 @@ public interface Classifier {
      * function is done.
      */
     public void load(File model) throws IOException;
-
-    /**
-     * Return a string representing the type of classification done (e.g. linear-svm). The user uses this to select
-     * which classifier they want to use. See the Options class.
-     */
-    public String key();
 }

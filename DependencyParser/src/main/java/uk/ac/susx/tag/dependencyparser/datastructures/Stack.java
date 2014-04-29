@@ -31,6 +31,7 @@ public class Stack<E>  {
 
     /**
      * Get and remove last element (top of the stack)
+     * Θ(1)
      */
     public E pop() {
         E element = elements.get(elements.size()-1);
@@ -40,6 +41,7 @@ public class Stack<E>  {
 
     /**
      * Add to the top of the stack (end of the list).
+     * Amortized constant
      */
     public void push(E element){
         elements.add(element);
@@ -48,11 +50,16 @@ public class Stack<E>  {
     /**
      * Get without removal item from the stack. Index 0 refers to the top of the stack (the last element), 1 is
      * penultimate, 2 is antepenultimate etc.
+     *
+     * Θ(1)
      */
     public E get(int index) {
         return elements.get(elements.size()-1-index);
     }
 
+    /**
+     * Θ(1)
+     */
     public boolean isEmpty() {
         return elements.size() == 0;
     }
@@ -61,5 +68,8 @@ public class Stack<E>  {
         return !isEmpty();
     }
 
+    /**
+     * Θ(1)
+     */
     public int size() { return elements.size(); }
 }
