@@ -39,7 +39,7 @@ public class Index {
      * Get the ID for a particular transition. Use boolean for deciding whether to add new ID if one aint present.
      */
     public int getTransitionID(ParseStyle.Transition transition, boolean addIfNotPresent) {
-        if (readOnly && addIfNotPresent) throw new RuntimeException("Trying to add an ID to an Index marked as read-only. The index is read-only during parse-time to enable concurrency.");
+        if (readOnly && addIfNotPresent) throw new RuntimeException("addIfNotPresent is set to true on an Index marked as read-only. The index is read-only during parse-time to enable concurrency.");
         return transitions.getIndex(transition.toString(), addIfNotPresent);
     }
 
@@ -61,7 +61,7 @@ public class Index {
      * Get ID of a particular feature. Use switch to determine if new ID is added if one aint present.
      */
     public int getFeatureID(String feature, boolean addIfNotPresent) {
-        if (readOnly && addIfNotPresent) throw new RuntimeException("Trying to add an ID to an Index marked as read-only. The index is read-only during parse-time to enable concurrency.");
+        if (readOnly && addIfNotPresent) throw new RuntimeException("addIfNotPresent is set to true on an Index marked as read-only. The index is read-only during parse-time to enable concurrency.");
         return features.getIndex(feature, addIfNotPresent);
     }
 

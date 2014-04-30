@@ -18,9 +18,8 @@ import java.util.Set;
  *  2. (parse-styles) You should be able to define your own parse style (i.e. the set of transitions
  *     that the parser has available to it, and how it learns which is the right transition during
  *     training), by creating a ParseStyle in the parsestyles package. It will then be available
- *     in the Options.getParserStyle() method. It also specifies what data-structures the parser is
- *     expected to be using, by returning the appropriate instance in the getNewParserState() method.
- *     Which brings us to...
+ *     in the Options.getParserStyle() method. The style also specifies what data-structures the parser is
+ *     expected to be using, by returning the appropriate instance in the getNewParserState() method (see 4)
  *
  *  3. (transition selection methods) You should be able to define your own method of selecting the
  *     best transition at parse-time. Look at the SelectionMethods in the transitionselectionmethods
@@ -31,7 +30,7 @@ import java.util.Set;
  *     key.
  *
  *  4. (parser-states) You should be able to define your own parser states and the structures it
- *     depends on and exposes to the feature extraction process. By adding another ParserState
+ *     depends on and exposes to the feature extraction process, by adding another ParserState
  *     class in the parserstates package, and having a parse style reference it.
  *
  *
@@ -60,53 +59,20 @@ public class Options {
      * a feasible parse style option.
      */
     public static interface Option {
-
         public String key();
     }
 
-
-    public static Classifier getClassifier(String classifierKey) {
-        Reflections reflections = new Reflections("uk.ac.susx.tag.dependencyparser.classifiers");
-        Set<Class<? extends Classifier>> foundClassifiers = reflections.getSubTypesOf(Classifier.class);
-
-        for(Class<? extends Classifier> klass : foundClassifiers) {
-            try {
-                // Create the instance
-                Classifier classifier = klass.newInstance();
-                if (classifierKey.equals(classifier.key())) return classifier;
-
-            } catch (IllegalAccessException | InstantiationException e) { throw new RuntimeException(e); }
-        } throw new RuntimeException("No classifier found matching the specified key.");
+    public static Classifier getClassifier(String classifierKey){
+        return getOption("uk.ac.susx.tag.dependencyparser.classifiers", Classifier.class, classifierKey);
     }
 
-    public static ParseStyle getParserStyle(String parseStyleKey) {
-        Reflections reflections = new Reflections("uk.ac.susx.tag.dependencyparser.parsestyles");
-        Set<Class<? extends ParseStyle>> foundStyles = reflections.getSubTypesOf(ParseStyle.class);
-
-        for(Class<? extends ParseStyle> klass : foundStyles) {
-            try {
-                // Create the instance
-                ParseStyle style = klass.newInstance();
-                if (parseStyleKey.equals(style.key())) return style;
-
-            } catch (IllegalAccessException | InstantiationException e) { throw new RuntimeException(e); }
-        } throw new RuntimeException("No style found matching the specified key.");
+    public static ParseStyle getParserStyle(String parseStyleKey){
+        return getOption("uk.ac.susx.tag.dependencyparser.parsestyles", ParseStyle.class, parseStyleKey);
     }
 
     public static SelectionMethod getSelectionMethod(String selectionMethodKey){
-        Reflections reflections = new Reflections("uk.ac.susx.tag.dependencyparser.transitionselectionmethods");
-        Set<Class<? extends SelectionMethod>> foundMethods = reflections.getSubTypesOf(SelectionMethod.class);
-
-        for(Class<? extends SelectionMethod> klass : foundMethods) {
-            try {
-                // Create the instance
-                SelectionMethod method = klass.newInstance();
-                if(selectionMethodKey.equals(method.key())) return method;
-
-            } catch (InstantiationException | IllegalAccessException e) {  throw new RuntimeException(e); }
-        } throw new RuntimeException("No selection method found matching the specified key");
+        return getOption("uk.ac.susx.tag.dependencyparser.transitionselectionmethods", SelectionMethod.class, selectionMethodKey);
     }
-
 
     /**
      * Use this for testing what options are available at a glance and/or checking whether your custom options
@@ -125,20 +91,30 @@ public class Options {
         printAvailableOptions("uk.ac.susx.tag.dependencyparser.transitionselectionmethods", SelectionMethod.class);
     }
 
-    private static void printAvailableOptions(String reflectionTarget, Class<? extends Option> type) {
-        Reflections reflections = new Reflections(reflectionTarget);
-        Set options = reflections.getSubTypesOf(type); // I tried it the generics way; it got ugly. The compiler was throwing errors that IntelliJ couldn't predict.
-        for (Object klass : options) {
+    private static <O extends Option> O getOption(String packagePath, Class<O> type, String key){
+        Reflections reflections = new Reflections(packagePath);
+        Set<Class<? extends O>> foundOptions = reflections.getSubTypesOf(type);
+        for(Class<? extends O> klass : foundOptions) {
             try {
-                Class<? extends Option> klassProper = (Class<? extends Option>)klass; // UTTER FILTH
-                System.out.println(" " + klassProper.newInstance().key());
+                O option = klass.newInstance();
+                if(key.equals(option.key())) return option;
+            } catch (InstantiationException | IllegalAccessException e) {  throw new RuntimeException(e); }
+        } throw new RuntimeException("No option found matching the specified key");
+    }
+
+    private static <O extends Option> void printAvailableOptions(String packagePath, Class<O> type) {
+        Reflections reflections = new Reflections(packagePath);
+        Set<Class<? extends O>> options = reflections.getSubTypesOf(type);
+        for (Class<? extends O> klass : options) {
+            try {
+                System.out.println(" " + klass.newInstance().key());
             } catch (InstantiationException | IllegalAccessException e) { throw new RuntimeException(e);}
         }
     }
 
-    public static void main(String[] args){
-        printAvailableOptionsSummary();
-    }
-
+    /**
+     * Print out the available options.
+     */
+    public static void main(String[] args){ printAvailableOptionsSummary(); }
 
 }

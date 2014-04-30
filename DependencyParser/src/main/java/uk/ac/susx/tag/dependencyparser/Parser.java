@@ -37,7 +37,7 @@ import java.util.List;
  *
  *
  * CONCURRENCY NOTE:
- *  I have made every effort to ensure that "parseSentence" methods on this class can be call concurrently, but this
+ *  I have made every effort to ensure that "parseSentence" methods on this class can be called concurrently, but this
  *  functionality remains to be tested. TODO
  *
  * Created by Andrew D. Robertson on 13/04/2014.
@@ -265,7 +265,7 @@ public class Parser {
                 token.setHead(state.getRootToken(), rootRelation);
         }
 
-        // The tokens are modified in place, but returned anyway for convenience.
+        // The tokens are modified in-place, but returned anyway for convenience.
         return sentence;
     }
 
@@ -477,10 +477,6 @@ public class Parser {
      * Extract a feature vector from the current parse state. If the StringIndexer argument is not null, then this
      * indexer will be used for any features that aren't present in the parser's index field. If it is null, then
      * the new IDs will be permanently added to the main index.
-     *
-     * As of 18/04/2014:
-     *   during training the index field is allowed to grow, but during parsing the main index is used as read-only
-     *   in an effort to go toward parsing in parallel.
      */
     private SparseBinaryVector getFeatureVector(ParserState state, StringIndexer unseenFeatures){
         SparseBinaryVector v = new SparseBinaryVector();
