@@ -11,17 +11,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a vector with no fixed number of dimensions.
- * All values are expected to be (and therefore returned as) 0,
- * unless an index is expressly set as otherwise.
+ * Represents a sparse vector with no fixed number of dimensions.
  *
- * When an index is added, it's value is set immediately to 1
- * (hence the name binary vector). However it is possible to
- * normalise the length of the vector (which necessarily
- * means that the vector isn't binary between 0 and 1. Though
- * the values will be either zero or X where X is a constant:
+ * - All values are assumed to be 0 at every index until the user expressly uses the put() method to assign a value
+ *   to an index. So requesting an index that the vector has never seen (using get()) will still result in 0.
  *
- * X = 1 - (1 / (number of non-zero values))
+ * - When an index is added, its value is set immediately to 1 (hence the name binary vector).
+ *
+ * - However it is possible to normalise the length of the vector (which necessarily means that the vector isn't binary
+ *   between 0 and 1. Though the values will be either zero or X where X is a constant:
+ *
+ *     X = 1 - (1 / (number of non-zero values))
  *
  * Created by Andrew D. Robertson on 13/04/2014.
  */

@@ -46,6 +46,13 @@ import java.util.Set;
  *   4. If a match is found, then an instance is created of the requested class and returned. Otherwise an exception is
  *      thrown.
  *
+ * IMPORTANT NOTE:
+ *
+ *   This wonderful extensibility is accomplished using Reflection. Reflection in java can be slow. So these
+ *   functions are only ever invoked when a parser is created or at the beginning of training, since one off uses
+ *   won't make any difference. So if you find yourself editting my code, DON'T find yourself calling these functions
+ *   for every single sentence you parse or something crazy like that.
+ *
  * Created by Andrew D. Robertson on 15/04/2014.
  */
 public class Options {
@@ -75,6 +82,11 @@ public class Options {
     }
 
     /**
+     * Print out the available options.
+     */
+    public static void main(String[] args){ printAvailableOptionsSummary(); }
+
+    /**
      * Use this for testing what options are available at a glance and/or checking whether your custom options
      * are being loaded correctly.
      */
@@ -91,6 +103,12 @@ public class Options {
         printAvailableOptions("uk.ac.susx.tag.dependencyparser.transitionselectionmethods", SelectionMethod.class);
     }
 
+    // Here comes the reflection and generics fun...
+
+    /**
+     * Search *packagePath* for a class which is a subtype of *type* (and therefore implements Option) and which
+     * returns *key* from its key() method.
+     */
     private static <O extends Option> O getOption(String packagePath, Class<O> type, String key){
         Reflections reflections = new Reflections(packagePath);
         Set<Class<? extends O>> foundOptions = reflections.getSubTypesOf(type);
@@ -102,6 +120,10 @@ public class Options {
         } throw new RuntimeException("No option found matching the specified key");
     }
 
+    /**
+     * For each class in *packagePath* which is a subtype of *type* (and therefore implements Option), print
+     * the value returned from its key() method, thereby presenting the list of available options in a package.
+     */
     private static <O extends Option> void printAvailableOptions(String packagePath, Class<O> type) {
         Reflections reflections = new Reflections(packagePath);
         Set<Class<? extends O>> options = reflections.getSubTypesOf(type);
@@ -111,10 +133,5 @@ public class Options {
             } catch (InstantiationException | IllegalAccessException e) { throw new RuntimeException(e);}
         }
     }
-
-    /**
-     * Print out the available options.
-     */
-    public static void main(String[] args){ printAvailableOptionsSummary(); }
 
 }

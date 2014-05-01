@@ -13,22 +13,28 @@ import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
  *
  * See individual method comments.
  *
- * NOTE: Subclasses should probably be stateless for safety.
+ * NOTE: Subclasses should probably be stateless (or immutable state) for safety.
  *
  * Created by Andrew D. Robertson on 29/04/2014.
  */
 public interface SelectionMethod extends Options.Option {
 
     /**
-     * Given that parser's current state of affairs, and the recommendations of the classifier for the next transition,
+     * Given the parser's current state, and the recommendations of the classifier for the next transition,
      * apply the best possible transition.
      *
      * Notice that you have access to both the current parser state, and the parser object itself. Two methods of
-     * note that you will most certainly want to use here are parser.getIndex(), and parser.getParseStyle(). Since
-     * it is through the ParseStyle object that you are able to make transitions, and through the Index object that
-     * you can resolve transition IDs to their fully qualified Transition instances.
+     * note that you will most certainly want to use here are:
      *
-     * IMPORTANT NOTE: The Index object retrieved from the parser using parser.getIndex() will be READ-ONLY. Do
+     *   1. parser.getIndex().
+     *      It is through the Index object that you can resolve transition IDs to their fully qualified Transition instances.
+     *      see Index.getTransition()
+     *
+     *   2. parser.getParseStyle().
+     *      It is through the ParseStyle object that you are able to make transitions.
+     *      see ParseStyle.transition()
+     *
+     * IMPORTANT NOTE: The Index object retrieved from the parser using parser.getIndex() will be READ-ONLY, so do
      *                 not attempt to call index.getTransitionID() or index.getFeatureID() with the parameter
      *                 "addIfNotPresent" set to true. This ensures that if the parser.parseSentence() function
      *                 is called concurrently, that threads are not trying to modifying things naughtily.

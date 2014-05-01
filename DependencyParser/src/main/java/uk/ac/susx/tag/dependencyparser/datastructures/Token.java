@@ -95,6 +95,9 @@ public class Token {
         return id == 0;
     }
 
+    /**
+     * Return the ID of the token (valid within a sentence, 0 is the root token, 1 and up are the tokens in the sentence).
+     */
     public int getID() { return id; }
 
 
@@ -112,6 +115,10 @@ public class Token {
         return id > other.id;
     }
 
+    /**
+     * Get an attribute from the map of attributes that are accessible during feature extraction.
+     * This does not include gold standard annotations or ID.
+     */
     public String getAtt(String attribute) {
         return attributes.get(attribute);
     }

@@ -26,13 +26,12 @@ import java.util.List;
  *  3. General functionality
  *
  * TRAINING:
- *  Look for a static train method in the lower half of this class. There is one train method that has all the
- *  functionality, and a bunch of others with fewer or different arguments that assign sensible defaults and delegate
- *  to the main train method. Each train method saves any relevant model data, and also returns an instance of the
- *  trained Parser.
+ *  Look for a static train methods. There is one train method that has all the functionality, and a bunch of others
+ *  with fewer or different arguments that assign sensible defaults and delegate to the main train method. Each train
+ *  method saves any relevant model data, and also returns an instance of the trained Parser.
  *
  * PARSING:
- *  If you're PARSING something with a trained parser, then you should use one of the constructors with the
+ *  If you want to parse something with a trained parser, then you should use one of the constructors with the
  *  appropriate arguments in the top half of the class. Then pass your data to a "parseSentence" or "parseFile" method.
  *
  *
@@ -477,6 +476,8 @@ public class Parser {
      * Extract a feature vector from the current parse state. If the StringIndexer argument is not null, then this
      * indexer will be used for any features that aren't present in the parser's index field. If it is null, then
      * the new IDs will be permanently added to the main index.
+     *
+     * NOTE:
      */
     private SparseBinaryVector getFeatureVector(ParserState state, StringIndexer unseenFeatures){
         SparseBinaryVector v = new SparseBinaryVector();

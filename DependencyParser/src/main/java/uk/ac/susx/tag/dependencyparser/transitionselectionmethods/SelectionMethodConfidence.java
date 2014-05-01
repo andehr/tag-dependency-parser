@@ -30,18 +30,21 @@ public class SelectionMethodConfidence implements SelectionMethod {
 
     @Override
     public void applyBestTransition(ParseStyle.Transition classifierRecommends, Int2DoubleMap decisionScores, ParserState state, Parser parser) {
+
         // Try the transition that the classifier thinks is best.
         if (parser.getParseStyle().transition(state, classifierRecommends, true)) return;
 
-        // If the transition is not possible, then select the next best based on the decision scores returned from the classifier
+        // If the transition is not possible, then continue with the aim of selecting the next best based on the decision scores returned from the classifier
 
         Map<String, Integer> bestIDPerBaseTrans = new HashMap<>();   // Transition ID --> Transition name (i.e. the base transition type without any label, e.g. "leftArc" instead of "leftArc|amod").
         Map<String, Double> bestScorePerBaseTrans = new HashMap<>(); // Transition name --> best score for this transition type
 
         // First we find the best transition (the one the classifier was most sure about) for each DISTINCT type of transition, e.g. the best right arc, the best left arc,...
         for(Int2DoubleMap.Entry entry : decisionScores.int2DoubleEntrySet()) {
+
             // Resolve the ID to the actual transition.
             ParseStyle.Transition t = parser.getIndex().getTransition(entry.getIntKey());
+
             // If this beats the current best score for this type of transition, then record new best
             if (!bestScorePerBaseTrans.containsKey(t.transitionName) || entry.getDoubleValue() > bestScorePerBaseTrans.get(t.transitionName)) {
                 bestScorePerBaseTrans.put(t.transitionName, entry.getDoubleValue());
@@ -49,7 +52,7 @@ public class SelectionMethodConfidence implements SelectionMethod {
             }
         }
         // Sort the set of distinct arcs by their score, and try them best to worst to see which one is possible.
-        // Currently the best overall transition (the one that the classifier suggested is impossible) will be tried again here. But that's no biggy.
+        // Currently the best overall transition (the one that the classifier suggested and was impossible) will be tried again here. But that's no biggy.
         for (Map.Entry<String, Double> entry : new ScoredTransitionTypeOrdering().reverse().immutableSortedCopy(bestScorePerBaseTrans.entrySet())){
             if(parser.getParseStyle().transition(state, parser.getIndex().getTransition(bestIDPerBaseTrans.get(entry.getKey())), true))
                 return;

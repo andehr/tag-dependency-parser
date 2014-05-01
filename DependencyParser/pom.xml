@@ -5,7 +5,7 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>dependencyparser</artifactId>
     <inceptionYear>2014</inceptionYear>
-    <version>1.5.1</version>
+    <version>1.5.2</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -39,7 +39,7 @@
         </dependency>
 
         <dependency>
-            <!--Java implementation of Liblinear, used by the dependency parser-->
+            <!--Java implementation of Liblinear (linear SVM package)-->
             <groupId>de.bwaldvogel</groupId>
             <artifactId>liblinear</artifactId>
             <version>1.92</version>

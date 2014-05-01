@@ -21,7 +21,7 @@ public class Index {
 
     private StringIndexer features;
     private StringIndexer transitions;
-    private transient boolean readOnly;
+    private transient boolean readOnly;  // The read only property is not remembered during saving/loading
 
     public Index() {
         features = new StringIndexer();
