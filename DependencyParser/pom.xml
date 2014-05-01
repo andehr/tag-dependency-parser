@@ -8,6 +8,13 @@
     <version>1.5.1</version>
     <packaging>jar</packaging>
 
+    <parent>
+        <version>1.0.0</version>
+        <groupId>uk.ac.susx.tag</groupId>
+        <artifactId>tag-dist</artifactId>
+        <relativePath>../../tag-dist</relativePath>
+    </parent>
+
     <dependencies>
 
         <dependency>
@@ -119,37 +126,5 @@
             </extension>
         </extensions>
     </build>
-
-    <repositories>
-
-        <repository>
-            <id>tag-release</id>
-            <name>Tag Releases</name>
-            <layout>default</layout>
-            <url>http://tag.inf.susx.ac.uk/mvn/release</url>
-        </repository>
-
-        <repository>
-            <id>tag-snapshot</id>
-            <name>Tag Snapshots</name>
-            <layout>default</layout>
-            <url>http://tag.inf.susx.ac.uk/mvn/snapshot</url>
-        </repository>
-
-    </repositories>
-
-    <distributionManagement>
-
-        <repository>
-            <id>tag-release</id>
-            <url>scp://tag-dev.inf.susx.ac.uk/mvn/release</url>
-        </repository>
-
-        <snapshotRepository>
-            <id>tag-snapshot</id>
-            <url>scp://tag-dev.inf.susx.ac.uk/mvn/snapshot</url>
-        </snapshotRepository>
-
-    </distributionManagement>
 
 </project>
