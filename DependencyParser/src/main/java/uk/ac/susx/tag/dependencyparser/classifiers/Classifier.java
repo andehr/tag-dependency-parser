@@ -8,6 +8,17 @@ import java.io.File;
 import java.io.IOException;
 
 /**
+ * It is the classifier's job to taken a feature vector representing the current parser state, and produce
+ * the ID of the transition that it recommends performing. It should also give a mapping from each
+ * transition ID to the decision score for that ID.
+ *
+ * The classifier should be capable of training from a file containing feature vectors mapped to the appropriate
+ * transition to take.
+ *
+ * NOTE: Subclasses should ensure that their only state is the actual model. And that during calls to the
+ *       predict method, the model is not changed in any way. The classifiers need to be instantiated with
+ *       no args.
+ *
  * Created by Andrew D. Robertson on 13/04/2014.
  */
 public interface Classifier extends Options.Option {
@@ -20,9 +31,13 @@ public interface Classifier extends Options.Option {
     public void train(File trainingSet, File outputModel, String options);
 
     /**
-     * Provide an integer ID representing the best action to take given the feature vector provided.
+     * Provide an transition ID representing the best action to take given the feature vector provided.
      * If the decisionScores is null, do nothing else. Otherwise fill the map with a mapping from every known
-     * action ID to a classification score of some design. See the Parser.applyBestTransition() method.
+     * action ID to a classification score of some design.
+     *
+     * DO NOT modify the model during this call if you can help it.
+     *
+     *
      */
     public int predict(SparseBinaryVector featureVector, String options, Int2DoubleMap decisionScores);
 

@@ -4,7 +4,12 @@ import com.google.common.base.Joiner;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 import uk.ac.susx.tag.dependencyparser.parserstates.ParserState;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,22 +23,35 @@ import java.util.regex.Pattern;
  * Format specification:
  *
  *   - Each line in the file that is blank or starts with a # is ignored.
+ *
  *   - Otherwise each line specifies one or more features to be extracted from one or more tokens.
+ *
  *   - Which features or tokens appear on a line is largely down to the user's logic (i.e. grouping features which all
- *     relate to the same token).
+ *     relate to the same token might be preferred).
+ *
  *   - Each line is of the following format:
+ *
  *     - Each line is divided into columns by a colon (:)
+ *
  *     - The first column is for a whitespace separated list of token addresses (1 or more)
+ *
  *     - Each subsequent column (1 or more) is a feature to be extracted from the tokens at those addresses
- *     - A token address consists firstly of direct address to a part of the parser state (see ParserState class), e.g.
+ *
+ *     - A token address consists primarily of direct address to a part of the parser state (see ParserState class), e.g.
  *         stk[0]
  *         The above means "top item on the stack". Ensure that the parser style you select provides this address.
+ *
  *     - Secondly, any amount of uses of any of the functions below:
+ *
  *         - ldep = leftmost dependant (according to parsing decisions made so far)
+ *
  *         - rdep = rightmost dependant (according to parsing decisions made so far)
+ *
  *         - head = the head of the token (according to the parsing decisions made so far)
+ *
  *       e.g. head(ldep(rdep(buf[0])))
  *            the above means "the head of the leftmost dependant of the rightmost dependant of the token next on the buffer"
+ *
  *     - The features can be any of those attributes of tokens that you specify when creating Token objects (see token class)
  *       So if you've given your tokens the attributes "form" and "pos", then a feature line might look like:
  *         stk[0] buf[0] : pos : form
@@ -42,6 +60,7 @@ import java.util.regex.Pattern;
  *                            2. form of the item on top of stack
  *                            3. pos tag of next item on buffer
  *                            4. form of item on top of stack
+ *
  *     - There are 2 reserved feature types that you must not try to use in your feature table for other purposes:
  *
  *       1. "deprel", e.g.
@@ -59,7 +78,7 @@ import java.util.regex.Pattern;
  */
 public class FeatureTable {
 
-    // Value used when a feature can't be extracted from the current parser state.
+    // Value used when a feature can't be extracted from the current parser state (i.e. cos the token don't have that feature, or that token doesn't exist. E.g. the head(stk[0]) only exists if a head has been assigned to the top stack item.
     private static final String absentFeature = "--absentFeature--";
 
     // Used during reading of the feature table

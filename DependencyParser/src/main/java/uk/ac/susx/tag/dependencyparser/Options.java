@@ -8,9 +8,10 @@ import uk.ac.susx.tag.dependencyparser.transitionselectionmethods.SelectionMetho
 import java.util.Set;
 
 /**
- * This is where any nasty reflection stuff happens for the purposes of configuration.
+ * This is where any nasty reflection stuff happens for the purposes of configuration (and extensibility)
  *
- * Generally, the parser is designed to be extensible easily in 4 places.
+ * Generally, the parser is designed to be extensible easily in 4 places without having to change source code
+ * and re-compile.
  *
  *  1. (classifiers) You should be able to define your own classifier, place it in the classifiers
  *     package, and then when you use Options.getClassifier() it will be available (via reflection).
@@ -50,7 +51,7 @@ import java.util.Set;
  *
  *   This wonderful extensibility is accomplished using Reflection. Reflection in java can be slow. So these
  *   functions are only ever invoked when a parser is created or at the beginning of training, since one off uses
- *   won't make any difference. So if you find yourself editting my code, DON'T find yourself calling these functions
+ *   won't make any difference. So if you find yourself editing my code, DON'T find yourself calling these functions
  *   for every single sentence you parse or something crazy like that.
  *
  * Created by Andrew D. Robertson on 15/04/2014.
@@ -106,12 +107,16 @@ public class Options {
     // Here comes the reflection and generics fun...
 
     /**
-     * Search *packagePath* for a class which is a subtype of *type* (and therefore implements Option) and which
+     * Search *packagePath* for a class which is a subtype of *type* (which must extend Option) and which
      * returns *key* from its key() method.
      */
     private static <O extends Option> O getOption(String packagePath, Class<O> type, String key){
         Reflections reflections = new Reflections(packagePath);
+
+        // Find all those classes which are subtypes of *type* and therefore of Option (therefore each having the key() method)
         Set<Class<? extends O>> foundOptions = reflections.getSubTypesOf(type);
+
+        // For each of the found classes, create a new instance of it, and if the result of its key() matches *key*, then return the instance.
         for(Class<? extends O> klass : foundOptions) {
             try {
                 O option = klass.newInstance();

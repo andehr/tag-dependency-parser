@@ -2,13 +2,17 @@ package uk.ac.susx.tag.dependencyparser;
 
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.List;
 
 /**
  * Mostly used for evaluation purposes.
  *
- * Will output in the format expect by CoNLL shared task (2009 I think?).
+ * Will output in the format expected by CoNLL shared task (2009 I think?).
  * Mostly used for comparing performance against the WSJ.
  *
  * TODO: allowing formatting of output, or implement some other sensible writer.

@@ -24,7 +24,8 @@ import java.util.regex.Pattern;
  *  - The transition should have a boolean "perform" parameter, which when true, the transition is also executed rather
  *    than just checked for feasibility.
  *
- * IMPORTANT NOTE: Subclasses should be stateless.
+ * IMPORTANT NOTE: Subclasses should probably be stateless (or immutable state) for safety. And they need to be instantiated
+ *                 with no args.
  *
  * Created by Andrew D. Robertson on 11/04/2014.
  */

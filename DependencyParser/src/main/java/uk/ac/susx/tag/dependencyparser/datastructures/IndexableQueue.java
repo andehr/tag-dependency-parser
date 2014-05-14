@@ -26,20 +26,21 @@ import java.util.NoSuchElementException;
  * RATIONALE:
  *
  *   - In this project, this queue will be used to hold at most a full sentence of token objects. And there will only
- *     every be as many in memory as there are concurrent calls of the Parser.parseSentence() method. So RAM will most
+ *     ever be as many in memory as there are concurrent calls of the Parser.parseSentence() method. So RAM will most
  *     definitely not be a concern.
  *
  *   - As far as I can see, the current styles of parsing would actually never need to grow the
  *     array (because they will always take items from the queue before adding items back. So technically I could
  *     just use a fixed length array equal to the actual collection size. But for the sake of maintainability and
  *     extensibility, a growing array will be used (perhaps parse styles on an individual basis could select an expansion
- *     factor of 1 if they guarantee this behaviour) TODO.
+ *     factor of 1 if they guarantee this behaviour TODO).
  *
  *   - At least one of the default ParseStyle implementations performs insertions at both ends of the queue. So you'd
  *     think that a linked list might suffice. However, for EVERY SINGLE parsing decision, a feature vector of the
  *     parser state must be constructed. And to build such a vector, MANY features such as "the PoS of the 3rd item
  *     on the buffer queue" will be used. So the queue will be indexed into A LOT. Which for a linked list would mean
- *     walking the nodes A LOT. Testing has confirmed a non-trivial speed-up.
+ *     walking the nodes A LOT (so indexing in to linked list would be worst case Θ(n), instead of the Θ(1) of this
+ *     structure). Testing has confirmed a non-trivial speed-up.
  *
  * User: Andrew D. Robertson
  * Date: 25/04/2014

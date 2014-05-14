@@ -6,7 +6,7 @@ import java.io.IOException;
 /**
  * This class opens up some package-private methods to public in the liblinear
  * java package, so that liblinear is actually sensible to use on anything other
- * than the command line...
+ * than the command line... Herp-a-derp.
  *
  * Created by Andrew D. Robertson on 14/04/2014.
  */
@@ -37,7 +37,7 @@ public class TrainOpenAccess extends Train {
     }
 
     /**
-     * This is a workaround to be able to making use of liblinear's option parsing code, which is hidden away in a
+     * This is a workaround to be able to make use of liblinear's option parsing code, which is hidden away in a
      * package-private method that is only applied to the commandline execution.
      * Options are provided just how they would be at command line. But if you read the source and see how I'm calling
      * this thing in ClassifierLinearSVM, you'll see that passing those files fills no particular purpose other than

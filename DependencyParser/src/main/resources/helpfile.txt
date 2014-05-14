@@ -136,8 +136,6 @@ to the relevant package hierarchy. See the Options class in the top-level packag
 ==================================================================================================
 IF YOU DID NOT INTEND TO SEE THIS HELP FILE, YOU WERE PROBABLY TRYING TO DO A SIMPLE TRAINING
 OR PARSING RUN ON A SINGLE FILE BY RUNNING THE MAIN METHOD OF THE PARSER CLASS, OR DIDN'T REALISE
-THAT THE PARSER HAS A DEFAULT BEHAVIOUR IN THE MAIN METHOD. YOU DID IT WRONG. GO CHECK THE MAIN
+THAT THE PARSER HAS A DEFAULT BEHAVIOUR IN THE MAIN METHOD. YOU DONE GOOFED. GO CHECK THE MAIN
 METHOD AT THE BOTTOM OF THE PARSER CLASS.
 ==================================================================================================
-
-

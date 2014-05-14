@@ -519,6 +519,8 @@ public class Parser {
                     System.out.println(line);
                 }
             }
+            // Print a summary of the options the parser finds at run time (should include any options you've defined to be in the appropriate package hierarchy. See Options class.
+            Options.printAvailableOptionsSummary();
         }
 
         // 1. Train cycle with all defaults, supply only the training data file path.
@@ -531,6 +533,6 @@ public class Parser {
             // fileToBeParsed outputFile
             new Parser().parseFile(new File(args[0]), new File(args[1]));
 
-        else throw new RuntimeException("Unrecognised arguments");
+        else throw new RuntimeException("Unrecognised arguments.");
     }
 }

@@ -13,7 +13,8 @@ import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
  *
  * See individual method comments.
  *
- * NOTE: Subclasses should probably be stateless (or immutable state) for safety.
+ * NOTE: Subclasses should probably be stateless (or immutable state) for safety. And they need to be instantiated
+ *       with no args.
  *
  * Created by Andrew D. Robertson on 29/04/2014.
  */

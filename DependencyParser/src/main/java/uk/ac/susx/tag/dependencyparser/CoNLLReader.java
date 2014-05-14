@@ -2,8 +2,17 @@ package uk.ac.susx.tag.dependencyparser;
 
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.regex.Pattern;
 
 /**
@@ -13,11 +22,13 @@ import java.util.regex.Pattern;
  *  - Sentences separated by blank lines
  *  - Each token line consists of a list of attributes for that token
  *  - The attributes should be in the same order for each token, and always present. If you really must have null values
- *    then don't use a single underscore as a null value.
- *  - Each attributes should be separated by any whitespace (no whitespace allowed inside attributes)
+ *    then don't use a single underscore as a null value. (this is where we depart from CoNLL, which uses underscores as null values)
+ *  - Each attribute should be separated by any whitespace (no whitespace allowed inside attributes)
  *
- *  The format string that you pass to the reader is a comma separated list of the attributes in order that should be
- *  expected for each token. Say my data looks like this :
+ *  The format string that you pass to the reader is a comma separated list of the attributes in the order that should be
+ *  expected for each token.
+ *
+ *  Say my data looks like this :
  *
  *   1    dogs    N
  *   2    hate    V
@@ -27,7 +38,7 @@ import java.util.regex.Pattern;
  *    (with or without spaces)
  *
  *  Even if (like often is the case in CoNLL datasets) there were more attributes but you're ignoring them with
- *  underscores, this format would be appropriate:
+ *  underscores, the same format would still be appropriate:
  *
  *   1    dogs   _    N
  *   2    hate   _    V
@@ -121,9 +132,9 @@ public class CoNLLReader implements AutoCloseable, Iterator<List<Token>>{
                 if (idPresent) { // If the user's format has specified that IDs are already present, then use them
                     int givenID = Integer.parseInt(attributes.get("id"));
                     attributes.remove("id"); // ID is a separate field from a Token's attributes
-                    sentence.add(new Token(givenID, attributes));
+                    sentence.add(new Token(givenID, attributes)); // Token automatically ensures that "deprel" and "head" attributes are separated out as gold standard annotations
                 } else {  // Otherwise assign our own.
-                    sentence.add(new Token(id, attributes));
+                    sentence.add(new Token(id, attributes)); // Token automatically ensures that "deprel" and "head" attributes are separated out as gold standard annotations
                 }
                 inSentence = true;
                 id++;
