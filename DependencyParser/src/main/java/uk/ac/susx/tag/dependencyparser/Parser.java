@@ -511,7 +511,15 @@ public class Parser {
      * Run tests from command line with default settings.
      */
     public static void main(String[] args) throws Exception {
-        if (args.length < 1) throw new RuntimeException("Specify the path to the training data.");
+        // 0. If no args, then print help-file.
+        if (args.length < 1) {
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(Resources.getResource("helpfile.txt").openStream(), "UTF-8"))){
+                String line;
+                while ((line=br.readLine()) != null){
+                    System.out.println(line);
+                }
+            }
+        }
 
         // 1. Train cycle with all defaults, supply only the training data file path.
         if (args.length == 1)
