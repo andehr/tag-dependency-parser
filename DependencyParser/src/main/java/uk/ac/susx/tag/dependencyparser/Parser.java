@@ -522,7 +522,7 @@ public class Parser {
         }
 
         // 1. Train cycle with all defaults, supply only the training data file path.
-        if (args.length == 1)
+        else if (args.length == 1)
             // trainingFile
             train(new File(args[0]));
 
