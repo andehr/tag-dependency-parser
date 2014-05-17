@@ -92,4 +92,16 @@ public class Sentence extends ArrayList<Token> {
 
         public Map<String, String> getAtts();
     }
+
+    public static interface ParsableWithPoSAndForm extends PoSandFormBearing {
+
+        public void setDeprel(String relationType);
+        public void setHead(int headID);
+    }
+
+    public static interface ParsableWithAttributeMap extends AttributeMapBearing
+    {
+        public void setDeprel(String relationType);
+        public void setHead(int headID);
+    }
 }

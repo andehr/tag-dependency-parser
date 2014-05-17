@@ -4,6 +4,7 @@ import com.google.common.io.Resources;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import uk.ac.susx.tag.dependencyparser.classifiers.Classifier;
+import uk.ac.susx.tag.dependencyparser.datastructures.Sentence;
 import uk.ac.susx.tag.dependencyparser.datastructures.SparseBinaryVector;
 import uk.ac.susx.tag.dependencyparser.datastructures.StringIndexer;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
@@ -16,6 +17,9 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The main top-level execution stage.
@@ -268,6 +272,73 @@ public class Parser {
         return sentence;
     }
 
+    public <E extends Sentence.ParsableWithPoSAndForm> List<E> parsePoSandFormBearingTokens(List<E> sentence, String classifierOptions, String transitionSelectionMethod) {
+        Sentence parsed = Sentence.createFromPoSandFormBearingTokens(sentence);
+        parseSentence(parsed, classifierOptions, transitionSelectionMethod);
+        for (int i = 0; i < parsed.size(); i++){
+            Token parsedToken = parsed.get(i);
+            E originalToken = sentence.get(i);
+            originalToken.setDeprel(parsedToken.getDeprel());
+            originalToken.setHead(parsedToken.getHeadID());
+        }
+        return sentence;
+    }
+
+    public <E extends Sentence.ParsableWithAttributeMap> List<E> parseAttributeMapBearingTokens(List<E> sentence, String classifierOptions, String transitionSelectionMethod){
+        Sentence parsed = Sentence.createFromAttributeMapBearingTokens(sentence);
+        parseSentence(parsed, classifierOptions, transitionSelectionMethod);
+        for (int i = 0; i < parsed.size(); i++){
+            Token parsedToken = parsed.get(i);
+            E originalToken = sentence.get(i);
+            originalToken.setDeprel(parsedToken.getDeprel());
+            originalToken.setHead(parsedToken.getHeadID());
+        }
+        return sentence;
+    }
+
+    public <E extends Sentence.ParsableWithPoSAndForm> void batchParsePoSandFormBearingTokens(Collection<List<E>> sentences, final String classifierOptions, final String transitionSelectionMethod){
+        ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        for (final List<E> sentence : sentences) {
+            pool.execute(new Runnable() {
+                public void run() {
+                    parsePoSandFormBearingTokens(sentence, classifierOptions, transitionSelectionMethod);
+                }
+            });
+        } pool.shutdown();
+        try {
+            pool.awaitTermination(27, TimeUnit.DAYS);
+        } catch (InterruptedException e) { throw new RuntimeException(e); }
+    }
+
+    public <E extends Sentence.ParsableWithAttributeMap> void batchParseAttributeMapBearingTokens(Collection<List<E>> sentences, final String classifierOptions, final String transitionSelectionMethod){
+        ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        for (final List<E> sentence : sentences) {
+            pool.execute(new Runnable() {
+                public void run() {
+                    parseAttributeMapBearingTokens(sentence, classifierOptions, transitionSelectionMethod);
+                }
+            });
+        }
+        pool.shutdown();
+        try {
+            pool.awaitTermination(27, TimeUnit.DAYS);
+        } catch (InterruptedException e) { throw new RuntimeException(e); }
+    }
+
+    public void batchParseSentences(Collection<List<Token>> sentences, final String classifierOptions, final String transitionSelectionMethod){
+        ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        for (final List<Token> sentence : sentences){
+            pool.execute(new Runnable() {
+                public void run() {
+                    parseSentence(sentence, classifierOptions, transitionSelectionMethod);
+                }
+            });
+        }
+        pool.shutdown();
+        try {
+            pool.awaitTermination(27, TimeUnit.DAYS);
+        } catch (InterruptedException e) { throw new RuntimeException(e); }
+    }
 
 /***********************************************************************************************************************
  *
