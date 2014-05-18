@@ -51,6 +51,16 @@ public class Token {
     private String goldDeprel = null;
 
     /**
+     * Return a copy of this token where all head/dependant relation info (except gold standard) is erased.
+     */
+    public Token unparsedShallowCopy() {
+        Token clone = new Token(id, attributes);
+        clone.goldHead = goldHead;
+        clone.goldDeprel = goldDeprel;
+        return clone;
+    }
+
+    /**
      * Convenience method for token with only the "form" attribute.
      */
     public Token(int id, String form) {

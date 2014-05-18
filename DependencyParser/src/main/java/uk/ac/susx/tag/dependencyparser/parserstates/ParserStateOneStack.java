@@ -16,7 +16,7 @@ import java.util.List;
  *
  * Created by Andrew D. Robertson on 11/04/2014.
  */
-public class ParserStateOneStack implements ParserState {
+public class ParserStateOneStack extends ParserState {
 
     private Token root = Token.newRootToken();  // Pointer to artificial root token, so getRootToken() is efficient.
     private IndexableQueue<Token> buffer = new IndexableQueue<>(); // To be loaded with a sentence, and processed in order

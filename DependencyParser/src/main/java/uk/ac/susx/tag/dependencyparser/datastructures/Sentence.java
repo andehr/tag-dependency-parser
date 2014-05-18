@@ -40,6 +40,8 @@ public class Sentence extends ArrayList<Token> {
         super();
     }
 
+    public Sentence(int initialCapacity) { super(initialCapacity); }
+
     public static Sentence createFromAttributeList(Iterable<Map<String, String>> tokenAttributes) {
         Sentence s = new Sentence();
         for (Map<String, String> attMap : tokenAttributes)
@@ -59,6 +61,14 @@ public class Sentence extends ArrayList<Token> {
         for(AttributeMapBearing token : tokens)
             s.add(token);
         return s;
+    }
+
+    public static Sentence unparsedCopy(Sentence original) {
+        Sentence clones = new Sentence(original.size());
+        for (Token token : original){
+            clones.add(token.unparsedShallowCopy());
+        }
+        return clones;
     }
 
     public void add(String form) {
