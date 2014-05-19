@@ -1,6 +1,7 @@
 package uk.ac.susx.tag.dependencyparser.datastructures;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
@@ -46,7 +47,7 @@ import java.util.NoSuchElementException;
  * Date: 25/04/2014
  * Time: 11:30
  */
-public class IndexableQueue<E> {
+public class IndexableQueue<E> implements Iterable<E>{
 
     private Object[] elements;   // The array of length size()*expansionFactor. It contains the queue elements in the middle.
     private int startIndex;      // The index in *elements* where the elements actually start
@@ -54,12 +55,20 @@ public class IndexableQueue<E> {
     private double expansionFactor; // The factor which influences the size of *elements*. A factor of 2 implies that the size of *elements* will be twice the number of actual elements.
 
     public IndexableQueue() {
-        this(2);
+        this(10, 2);
     }
 
     public IndexableQueue(double expansionFactor) {
+        this(10, expansionFactor);
+    }
+
+    public IndexableQueue(int initialCapacity) {
+        this(initialCapacity, 2);
+    }
+
+    public IndexableQueue(int initialCapacity, double expansionFactor) {
         this.expansionFactor = expansionFactor;
-        newElementArray();
+        newElementArray(initialCapacity);
     }
 
     public IndexableQueue(Collection<? extends E> elements) {
@@ -158,10 +167,14 @@ public class IndexableQueue<E> {
         newElementArray(elements, startIndex, endIndex);
     }
 
-    private void newElementArray() {
-        this.elements = new Object[20];
-        startIndex = 5;
-        endIndex = 5;
+    /**
+     * Create an array with an initial capacity.
+     * Bear in mind that the actual size of the underlying array will be initialCapacity*expansionFactor.
+     */
+    private void newElementArray(int initialCapacity) {
+        this.elements = new Object[(int)Math.ceil(initialCapacity*expansionFactor)];
+        startIndex = (this.elements.length / 2) - (initialCapacity / 2);
+        endIndex = startIndex;
     }
 
     private void newElementArray(Object[] elements) {
@@ -182,5 +195,29 @@ public class IndexableQueue<E> {
         endIndex = startIndex + (end-start);
 
         System.arraycopy(elements, start, this.elements, startIndex, end-start);
+    }
+
+    /**
+     * Allows for use in a for-each loop.
+     * Iterates in the order of the queue. So you get the elements in the order that you'd get if you
+     * repeatedly called pop() (of course without the side-effect of removing them from the queue)
+     */
+    @Override
+    public Iterator<E> iterator() {
+        return new Iterator<E>(){
+            int index = 0;
+
+            public boolean hasNext() {
+                return index < size();
+            }
+
+            public E next() {
+                if(hasNext())
+                    return get(index++); // increment index AFTER acquiring element
+                else throw new NoSuchElementException();
+            }
+
+            public void remove() { throw new UnsupportedOperationException(); }
+        };
     }
 }

@@ -50,15 +50,6 @@ public class Token {
     private int goldHead = 0;
     private String goldDeprel = null;
 
-    /**
-     * Return a copy of this token where all head/dependant relation info (except gold standard) is erased.
-     */
-    public Token unparsedShallowCopy() {
-        Token clone = new Token(id, attributes);
-        clone.goldHead = goldHead;
-        clone.goldDeprel = goldDeprel;
-        return clone;
-    }
 
     /**
      * Convenience method for token with only the "form" attribute.
@@ -176,10 +167,70 @@ public class Token {
      */
     public int getHeadID() { return head == null? 0 : head.id; }
 
+
+
+
+    /**
+     * Return a copy of this token where all head/dependant relation info (except gold standard) is erased.
+     *
+     * This is unnecessary if you're trying to get a copy of the root token without any children attached. Just
+     * use the newRootToken() method.
+     *
+     * This is part of the set of functions that ultimately allow a parser state to make a complete clone of itself.
+     * A parser state includes the decisions that it's made, and those decisions are annotated directly onto the
+     * input tokens. So in order to properly clone a parser state, the input sentence must be cloned too.
+     *
+     * See the copy() method of the ParserState abstract class for discussion.
+     */
+    public Token unparsedShallowCopy() {
+        Token clone = new Token(id, attributes);
+        clone.goldHead = goldHead;
+        clone.goldDeprel = goldDeprel;
+        return clone;
+    }
+
+    /**
+     * Given the original sentence, and artificial root node (and therefore any parsing decisions that they have
+     * been annotated with), plus a copy of the sentence, and a new artificial root node; copy the parsing decisions
+     * made so far from the original sentence to the copy (including the new root). Recall that Tokens store
+     * information about their head tokens AND their child tokens, which is why the root token has relation info.
+     *
+     * Probably no need to call this method yourself. Instead use the Sentence.parsedCopy() method.
+     *
+     * This is part of the set of functions that ultimately allow a parser state to make a complete clone of itself.
+     * A parser state includes the decisions that it's made, and those decisions are annotated directly onto the
+     * input tokens. So in order to properly clone a parser state, the input sentence must be cloned too.
+     *
+     * See the copy() method of the ParserState abstract class for discussion.
+     */
+    public static void copyParsingDecisions(List<Token> originalSentence, Token originalRoot, List<Token> copySentence, Token copyRoot){
+
+        // Copy root children info
+        copyRoot.leftmostChild = copySentence.get(originalRoot.leftmostChild.id -1);
+        copyRoot.rightmostChild = copySentence.get(originalRoot.rightmostChild.id -1);
+        copyRoot.lDeps = originalRoot.lDeps;
+        copyRoot.rDeps = originalRoot.rDeps;
+
+        for (int i = 0; i < copySentence.size(); i++) {
+            Token copyToken = copySentence.get(i);
+            Token originalToken = originalSentence.get(i);
+
+            int headID = originalToken.getHeadID();
+            copyToken.head = (headID == 0)? copyRoot : copySentence.get(headID-1);
+            copyToken.deprel = originalToken.deprel;
+
+            // Should never be root, so we don't bounds check the array for ID == 0
+            copyToken.leftmostChild = copySentence.get(originalToken.leftmostChild.id -1);
+            copyToken.rightmostChild = copySentence.get(originalToken.rightmostChild.id -1);
+
+            copyToken.lDeps = originalToken.lDeps;
+            copyToken.rDeps = originalToken.rDeps;
+        }
+    }
+
     /*
      * Static validation methods
      */
-
     public static boolean areIDsConsistent(List<Token> sentence) {
         for (int i = 0; i < sentence.size(); i++) {
             if (sentence.get(i).getID() != i) return false;

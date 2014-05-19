@@ -76,10 +76,24 @@ public abstract class ParserState {
      */
     public abstract Token getToken(String structureType, int address);
 
+    public abstract ClonedState copy(List<Token> currentSentence);
+
     public static class ClonedState {
 
         private List<Token> sentence;
         private ParserState parserState;
 
+        public ClonedState(List<Token> sentence, ParserState parserState){
+            this.sentence = sentence;
+            this.parserState = parserState;
+        }
+
+        public ParserState getParserState() {
+            return parserState;
+        }
+
+        public List<Token> getSentence() {
+            return sentence;
+        }
     }
 }

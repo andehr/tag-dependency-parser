@@ -1,14 +1,15 @@
 package uk.ac.susx.tag.dependencyparser.datastructures;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * Simple FILO data structure implemented using array list.
  *
  * Created by Andrew D. Robertson on 11/04/2014.
  */
-public class Stack<E>  {
+public class Stack<E> implements Iterable<E> {
 
     private ArrayList<E> elements;
 
@@ -16,13 +17,13 @@ public class Stack<E>  {
         elements = new ArrayList<>();
     }
 
+    public Stack(int initialCapacity){
+        elements = new ArrayList<>(initialCapacity);
+    }
+
     public Stack(E element) {
         this();
         push(element);
-    }
-
-    public Stack(Collection<? extends E> elements){
-        this.elements = new ArrayList<>(elements);
     }
 
     public E peek() {
@@ -72,4 +73,29 @@ public class Stack<E>  {
      * Θ(1)
      */
     public int size() { return elements.size(); }
+
+
+    /**
+     * Allow for use in a for-each loop.
+     * Iterates in the order of the stack. So you get the elements in the order that you would if you repeatedly called
+     * pop() (of course without the side-effect of removing the elements).
+     */
+    @Override
+    public Iterator<E> iterator() {
+        return new Iterator<E>(){
+            int index = 0;
+
+            public boolean hasNext() {
+                return index < size();
+            }
+
+            public E next() {
+                if (hasNext())
+                    return get(index++); // increment index AFTER acquiring current element
+                else throw new NoSuchElementException();
+            }
+
+            public void remove() { throw new UnsupportedOperationException();  }
+        };
+    }
 }

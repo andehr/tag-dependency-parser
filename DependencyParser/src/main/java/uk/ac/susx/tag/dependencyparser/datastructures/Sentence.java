@@ -1,6 +1,7 @@
 package uk.ac.susx.tag.dependencyparser.datastructures;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -63,14 +64,6 @@ public class Sentence extends ArrayList<Token> {
         return s;
     }
 
-    public static Sentence unparsedCopy(Sentence original) {
-        Sentence clones = new Sentence(original.size());
-        for (Token token : original){
-            clones.add(token.unparsedShallowCopy());
-        }
-        return clones;
-    }
-
     public void add(String form) {
         super.add(new Token(size() + 1, form));
     }
@@ -89,6 +82,20 @@ public class Sentence extends ArrayList<Token> {
 
     public void add(AttributeMapBearing token){
         add(token.getAtts());
+    }
+
+    public static Sentence unparsedCopy(List<Token> original) {
+        Sentence clone = new Sentence(original.size());
+        for (Token token : original){
+            clone.add(token.unparsedShallowCopy());
+        }
+        return clone;
+    }
+
+    public static Sentence parsedCopy(List<Token> original, Token originalRoot, Token newRoot){
+        Sentence copy = unparsedCopy(original);
+        Token.copyParsingDecisions(original, originalRoot, copy, newRoot);
+        return copy;
     }
 
     public static interface PoSandFormBearing {

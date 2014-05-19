@@ -1,6 +1,7 @@
 package uk.ac.susx.tag.dependencyparser.parserstates;
 
 import uk.ac.susx.tag.dependencyparser.datastructures.IndexableQueue;
+import uk.ac.susx.tag.dependencyparser.datastructures.Sentence;
 import uk.ac.susx.tag.dependencyparser.datastructures.Stack;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 
@@ -21,6 +22,8 @@ public class ParserStateOneStack extends ParserState {
     private Token root = Token.newRootToken();  // Pointer to artificial root token, so getRootToken() is efficient.
     private IndexableQueue<Token> buffer = new IndexableQueue<>(); // To be loaded with a sentence, and processed in order
     private Stack<Token> stack = new Stack<>(root);  // To be loaded with items from the buffer to be processed
+
+    public ParserStateOneStack() {}
 
     /**
      * Initialise the parser with a new sentence.
@@ -67,11 +70,38 @@ public class ParserStateOneStack extends ParserState {
                 case "buf":  // "buffer"
                     return buffer.get(address);
                 default:
-                    throw new RuntimeException("Invalid data structure.");
+                    throw new RuntimeException("Invalid data structure being referenced in the feature table.");
             }
         } catch (IndexOutOfBoundsException e) {
             return null; // Token is not present at requested address, so return null.
         }
     }
 
+    @Override
+    public ClonedState copy(List<Token> currentSentence){
+        Token newRoot = Token.newRootToken();
+        List<Token> copySentence = Sentence.parsedCopy(currentSentence, root, newRoot);
+
+        // We know capacity, so set initial capacity
+        IndexableQueue<Token> copyBuffer = new IndexableQueue<>(currentSentence.size(), 2.0);
+        for (Token token : buffer){
+            int id = token.getID();
+            copyBuffer.push((id == 0) ? newRoot : copySentence.get(id - 1));
+        }
+
+        Stack<Token> copyStack = new Stack<>();
+        for (int i = stack.size()-1; i >= 0; i--){
+            int id = stack.get(i).getID();
+            copyStack.push((id==0)? newRoot : copySentence.get(id-1));
+        }
+
+        return new ClonedState(copySentence,
+                               new ParserStateOneStack(newRoot, copyStack, copyBuffer));
+    }
+
+    private ParserStateOneStack(Token root, Stack<Token> stack, IndexableQueue<Token> buffer){
+        this.root = root;
+        this.stack = stack;
+        this.buffer = buffer;
+    }
 }
