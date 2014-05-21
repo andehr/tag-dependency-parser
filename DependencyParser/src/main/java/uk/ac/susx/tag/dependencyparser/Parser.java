@@ -212,7 +212,7 @@ public class Parser {
      * @param transitionSelectionMethod Method of deciding which transition to select
      */
     public void parseFile(File data, File output, String dataFormat, String classifierOptions, String transitionSelectionMethod) throws IOException {
-        try (CoNLLWriter out = new CoNLLWriter(output);
+        try (CoNLLWriter out = new CoNLLWriter(output, dataFormat);
              CoNLLReader in = new CoNLLReader(data, dataFormat)) {
 
             while(in.hasNext()) {
