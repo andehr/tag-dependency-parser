@@ -112,8 +112,15 @@ is. See the Token class in the datastructures package.
 
 You can access the relation type by calling "getDeprel()" on a Token object.
 
-You can access the head Token by calling "getHead()" on a Token object. 
+You can access the head Token by calling "getHead()" on a Token object.
+
 Alternatively you can call "getHeadID()" if you just want the ID of the head Token.
+
+Functionality is being rolled in that enables the parser to directly annotate your
+objects with dependency relations, using the ParsableWithAttributeMap and
+ParsableWithPoSandForm interfaces. Rather than returning these Token objects that
+you then query for head and deprel. We still need to maintain the Token objects
+internally though, because they carry other data. So this is purely a cosmetic gain.
 
 -- 4. Training --
 

@@ -2,27 +2,20 @@ package uk.ac.susx.tag.dependencyparser;
 
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.io.*;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
- * Class for reading in vaguely CoNLL-esque data. It's pretty flexible on the matter, but here are the rules:
+ * Class for reading in vaguely CoNLL-esque data. Here are the rules:
  *
  *  - Token per line
  *  - Sentences separated by blank lines
  *  - Each token line consists of a list of attributes for that token
- *  - The attributes should be in the same order for each token, and always present. If you really must have null values
- *    then don't use a single underscore as a null value. (this is where we depart from CoNLL, which uses underscores as null values)
+ *  - Same number of attributes for each token (if you want to use a null value for features that don't have a particular
+ *    attribute, probably best to copy the null value used by the feature extraction process when it can't find a
+ *    particular feature. You can find this in the "absentFeature" field of the FeatureTable class.
+ *  - The attributes should be in the same order for each token, and always present.
  *  - Each attribute should be separated by any whitespace (no whitespace allowed inside attributes)
  *
  *  The format string that you pass to the reader is a comma separated list of the attributes in the order that should be
@@ -37,15 +30,12 @@ import java.util.regex.Pattern;
  *  Then my format string would look like:   id, form, pos
  *    (with or without spaces)
  *
- *  Even if (like often is the case in CoNLL datasets) there were more attributes but you're ignoring them with
- *  underscores, the same format would still be appropriate:
+ *  If there are attributes that you'd like the parser to ignore  (like the third column of the data below), then
+ *  you can use the keyword "ignore":     id, form, ignore, pos
  *
  *   1    dogs   _    N
  *   2    hate   _    V
  *   3    cats   _    N
- *
- *  There's an attribute we're ignoring using a single underscore. The format string "id, form, pos" is still appropriate.
- *  Any single underscores separated by whitespace will be ignored as if they were never seen.
  *
  *  "id" is a reserved word. And if your format doesn't specify IDs, then they'll be added to the tokens for you.
  *
@@ -58,9 +48,7 @@ import java.util.regex.Pattern;
 public class CoNLLReader implements AutoCloseable, Iterator<List<Token>>{
 
     private static final Pattern formatSplitter = Pattern.compile("\\s*,\\s*");
-//    private static final Pattern tokenLineSplitter = Pattern.compile("\\s+([_]\\s+)*");
     private static final Pattern tokenLineSplitter = Pattern.compile("\\s+");
-//    private static final Pattern trailingUnderscores = Pattern.compile("(\\s+[_])*\\s+[_]$");
 
     private BufferedReader reader;
     private String[] format;
@@ -112,38 +100,6 @@ public class CoNLLReader implements AutoCloseable, Iterator<List<Token>>{
     public void close() throws IOException {
         reader.close();
     }
-
-    /**
-     * Always one read ahead of the next() method so that the answer to hasNext() is always quick.
-     */
-//    private void  readNextSentence() throws IOException {
-//        boolean inSentence = false;
-//        List<Token> sentence = new ArrayList<>();
-//        int id = 1;
-//        String line;
-//        while ((line = reader.readLine()) != null) {
-//            if (line.trim().length() > 0) {
-//                Map<String, String> attributes = new HashMap<>();
-//                String[] items = tokenLineSplitter.split(trailingUnderscores.matcher(line.trim()).replaceAll(""));
-//                if (items.length < format.length) throw new RuntimeException("The CoNLL format specified suggests that there are more token attributes than there are.\nLine: " + line);
-//                if (items.length > format.length) throw new RuntimeException("The CoNLL format specified suggests there there are fewer attributes than there are\nLine: " + line);
-//                for (int i = 0; i < format.length; i++) {
-//                    attributes.put(format[i], items[i]);
-//                }
-//                if (idPresent) { // If the user's format has specified that IDs are already present, then use them
-//                    int givenID = Integer.parseInt(attributes.get("id"));
-//                    attributes.remove("id"); // ID is a separate field from a Token's attributes
-//                    sentence.add(new Token(givenID, attributes)); // Token automatically ensures that "deprel" and "head" attributes are separated out as gold standard annotations
-//                } else {  // Otherwise assign our own.
-//                    sentence.add(new Token(id, attributes)); // Token automatically ensures that "deprel" and "head" attributes are separated out as gold standard annotations
-//                }
-//                inSentence = true;
-//                id++;
-//            } else if (inSentence) break;
-//        }
-//        nextSentence = sentence;
-//        if(line == null) reader.close();
-//    }
 
     /**
      * Always one read ahead of the next() method so that the answer to hasNext() is always quick.

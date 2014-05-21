@@ -3,7 +3,6 @@ package uk.ac.susx.tag.dependencyparser.transitionselectionmethods;
 import com.google.common.collect.Ordering;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import uk.ac.susx.tag.dependencyparser.Index;
-import uk.ac.susx.tag.dependencyparser.Parser;
 import uk.ac.susx.tag.dependencyparser.parserstates.ParserState;
 import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
 
@@ -15,7 +14,7 @@ import java.util.Map;
  *   1. Try the transition that the classifier recommends
  *   2. If that is impossible, find transition of each type that got the largest positive number as its score.
  *   3. Try the best of each type from best to worst. (A good parse style would have a transition that is always
- *      possible in a non-terminal state, so one of these should work. If it don't throw an exception).
+ *      possible in a non-terminal state, so one of these should work. If it don't, then throw an exception).
  *
  *   This method is sensible for dealing with the output of the Liblinear SVM package, as far as I know. Each score
  *   represents how far the decision was from the margin, so a bigger score is better because the decision was

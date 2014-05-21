@@ -19,11 +19,11 @@ import java.io.IOException;
  */
 public class ClassifierLinearSVM implements Classifier {
 
-    private Model model = null;   // Actual liblinear model
+    private Model model = null; // Actual liblinear model
 
     @Override
     public void train(File trainingData, File outputModel, String options) {
-        TrainOpenAccess trainer = new TrainOpenAccess();  // Based on Liblinear "Train" class, but opens up some package-private methods.
+        TrainOpenAccess trainer = new TrainOpenAccess();  // Class based on Liblinear "Train" class, but opens up some package-private methods.
         trainer.parseCommandline(options, trainingData, outputModel);  // Used for parsing out the options.
         try {
             Parser.printStatus("Reading in vectors to the classifier...");
@@ -40,6 +40,9 @@ public class ClassifierLinearSVM implements Classifier {
         }
     }
 
+    /**
+     * Does not alter the model's state, as requested by interface.
+     */
     @Override
     public int predict(SparseBinaryVector featureVector, String options, Int2DoubleMap decisionScores) {
         if (model == null) throw new RuntimeException("No model loaded or trained.");

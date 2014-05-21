@@ -113,6 +113,9 @@ public class Sentence extends ArrayList<Token> {
         return copy;
     }
 
+    /**
+     * This interface tells the parser that subclasses have a PoS and Form with which to construct a Token object.
+     */
     public static interface PoSandFormBearing {
 
         public String getForm();
@@ -120,17 +123,29 @@ public class Sentence extends ArrayList<Token> {
         public String getPos();
     }
 
+    /**
+     * This interface tells the parser that subclasses have a map of attributes that can be used to instantiate a
+     * Token object.
+     */
     public static interface AttributeMapBearing {
 
         public Map<String, String> getAtts();
     }
 
+    /**
+     * This interface tells the parser that subclasses have a PoS and Form to do feature extraction with, and that
+     * the parsing decisions can be directly annotated on to the subclass.
+     */
     public static interface ParsableWithPoSAndForm extends PoSandFormBearing {
 
         public void setDeprel(String relationType);
         public void setHead(int headID);
     }
 
+    /**
+     * This interface tells the parser that subclasses have a map of attributes to select from, and that the
+     * parsing decisions can be directly annotated on to the subclass.
+     */
     public static interface ParsableWithAttributeMap extends AttributeMapBearing
     {
         public void setDeprel(String relationType);

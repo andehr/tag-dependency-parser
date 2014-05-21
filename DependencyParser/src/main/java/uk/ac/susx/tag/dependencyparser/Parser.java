@@ -13,7 +13,6 @@ import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
 import uk.ac.susx.tag.dependencyparser.transitionselectionmethods.SelectionMethod;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
@@ -344,46 +343,7 @@ public class Parser {
         } catch (InterruptedException e) { throw new RuntimeException(e); }
     }
 
-    public static void parallelTest() throws IOException {
-        System.out.println(Runtime.getRuntime().availableProcessors());
 
-        Parser p = new Parser();
-//        try {
-//            p = train(new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/treebank3-npbrac-stanforddeps-conll-twittertags-training.txt"));
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-
-        File input = new File("/Volumes/LocalDataHD/adr27/Desktop/testtweets.txt");
-        List<List<Token>> sentences = new ArrayList<>();
-        try (CoNLLReader in = new CoNLLReader(input, "id, form, ignore, pos, ignore, ignore, head, deprel, ignore, ignore")) {
-            while(in.hasNext()) {
-                sentences.add(in.next());
-            }
-        } catch (IOException e) { throw new RuntimeException(e);}
-
-        System.out.println(sentences.size());
-
-        // Serial
-        printStatus("serial start");
-        for (List<Token> sentence : sentences) {
-            p.parseSentence(sentence);
-        }
-        printStatus("serial end");
-
-        // Parallel
-//        printStatus("parallel start");
-//        p.batchParseSentences(sentences, "", "confidence");
-//        printStatus("parallel end");
-
-        try (CoNLLWriter out = new CoNLLWriter(new File("/Volumes/LocalDataHD/adr27/Desktop/testtweets-serial.txt"))) {
-            for (List<Token> sentence : sentences){
-                out.write(sentence);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
 /***********************************************************************************************************************
  *
@@ -630,11 +590,6 @@ public class Parser {
      * Run tests from command line with default settings.
      */
     public static void main(String[] args) throws Exception {
-        Parser p = train(new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/full_wsj_cmu_pos_stanford_dep.txt"));
-        p.parseFile(new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/development_wsj_cmu_pos_stanford_dep.txt"),
-                    new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/development_wsj_cmu_pos_stanford_dep-parsed.txt"));
-        System.exit(0);
-
         // 0. If no args, then print help-file.
         if (args.length < 1) {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(Resources.getResource("helpfile.txt").openStream(), "UTF-8"))){

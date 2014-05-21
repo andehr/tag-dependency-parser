@@ -35,9 +35,8 @@ public interface Classifier extends Options.Option {
      * If the decisionScores is null, do nothing else. Otherwise fill the map with a mapping from every known
      * action ID to a classification score of some design.
      *
-     * DO NOT modify the model during this call if you can help it.
-     *
-     *
+     * DO NOT modify the model during this call if you can help it. If you do so, then you invalidate the ability to
+     * call the Parser.parseSentence() concurrently. No parallelism for you.
      */
     public int predict(SparseBinaryVector featureVector, String options, Int2DoubleMap decisionScores);
 
