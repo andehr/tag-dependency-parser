@@ -11,43 +11,6 @@ import java.util.List;
  *
  * A state also has the duty of exposing data structures to the feature extraction process (see getToken() ).
  *
- * TODO:
- *    Make a new method "copy()" which should create a new state that is an exact copy of the current state.
- *    This will probably be necessary for beam search. Since a parser state doesn't necessarily store the entire sentence
- *    (since Tokens are pruned away) the sentence will need to be passed to the copy() method). The parser state should
- *    make a complete
- *
- *    - This needs to be the responsibility of the parser state, because it is the only object with access to the root
- *      token of the new state.
- *
- *    - The input list of Tokens is currently directly annotated with the arc decisions of the parser. This means that
- *      the partial parse which is part of the parser state actually includes the full sentence, even tho the state
- *      may not include the full set of tokens at any one time.
- *
- *    - So we kinda need to return a cloned version of the input sentence AND a cloned version of the parser state.
- *
- *    - The solution perhaps is to have a method:
- *
- *      public abstract ClonedState copy(List<Token> sentence);
- *
- *      Which is overridden by a ParserState subclass, which takes the input sentence, makes use of the
- *      Sentence.unparsedCopy() method to make a full copy without the decision arcs.
- *
- *      Then the ParserState creates a new empty version of itself, adding the relevant tokens to each data-structure
- *      (including making a new root token).
- *
- *      Then maps out what dependencies have already been assigned in the original version. Then copies those into the
- *      new version.
- *
- *      In the returned ClonedState object, there is a full parsed clone of the original sentence, and a new cloned
- *      parser state.
- *
- *    - Currently the tokens when cloned, do a shallow copy of their attributes. Since they'll
- *      never change mid-parse. Should probably make sure this is the case.
- *
- *    - If this gets too complicated, we may have to store arc decisions separate from the tokens themselves. This would
- *      involve massive re-writes...
- *
  * Created by Andrew D Robertson on 11/04/2014.
  */
 public abstract class ParserState {
@@ -76,8 +39,41 @@ public abstract class ParserState {
      */
     public abstract Token getToken(String structureType, int address);
 
+
+    /**
+     * Make a complete clone of the current state of the parser.
+     * This may be useful when doing Beam Search.
+     *
+     * Bear in mind that the state of the parser includes what arcs have already been assigned to the tree.
+     * These arcs are stored on the input tokens themselves. So in order to provide a complete proper clone
+     * of the parser state, the input sentence itself must be cloned.
+     *
+     * A parser state only starts with access to the full sentence (when it's loaded into the buffer), but
+     * eventually it pops tokens off the stack and forgets about them when it's done with them.
+     *
+     * So in order to make a proper clone, the current input sentence being parsed needs to be passed to this method.
+     *
+     * The method will return an instance of "ClonedState", whose fields contain both a cloned sentence, and the
+     * cloned parser state.
+     *
+     * Currently, it is impossible to modify the attributes of Token objects once they've been constructed. So when
+     * Token objects are cloned, the clone maintains a reference to the attribute map of the original, instead of
+     * having an entire new map for the attributes. If you ever modify the Token class such that it is now possible
+     * to modify these attributes, you will need to create a unparsedDeepCopy() method on the Token, and ensure that during
+     * this method call, that that method is called instead of unparsedShallowCopy(), and that the deep copy makes an
+     * entirely new map.
+     *
+     * If you're implementing your own copy function in your own ParserState, then be sure to check out the
+     * Sentence.parsedCopy() method, which can make a copy of a list of Tokens properly. This is half your work
+     * done.
+     */
     public abstract ClonedState copy(List<Token> currentSentence);
 
+
+    /**
+     * A full clone of a state includes a clone of the full input sentence. This is represented with this
+     * object. See copy().
+     */
     public static class ClonedState {
 
         private List<Token> sentence;

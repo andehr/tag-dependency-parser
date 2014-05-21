@@ -1,5 +1,7 @@
 package uk.ac.susx.tag.dependencyparser.datastructures;
 
+import com.google.common.base.Joiner;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -97,5 +99,10 @@ public class Stack<E> implements Iterable<E> {
 
             public void remove() { throw new UnsupportedOperationException();  }
         };
+    }
+
+    @Override
+    public String toString() {
+        return "Top:[" + Joiner.on(", ").join(this) + "]";
     }
 }

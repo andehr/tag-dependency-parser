@@ -58,8 +58,9 @@ import java.util.regex.Pattern;
 public class CoNLLReader implements AutoCloseable, Iterator<List<Token>>{
 
     private static final Pattern formatSplitter = Pattern.compile("\\s*,\\s*");
-    private static final Pattern tokenLineSplitter = Pattern.compile("\\s+([_]\\s+)*");
-    private static final Pattern trailingUnderscores = Pattern.compile("(\\s+[_])*\\s+[_]$");
+//    private static final Pattern tokenLineSplitter = Pattern.compile("\\s+([_]\\s+)*");
+    private static final Pattern tokenLineSplitter = Pattern.compile("\\s+");
+//    private static final Pattern trailingUnderscores = Pattern.compile("(\\s+[_])*\\s+[_]$");
 
     private BufferedReader reader;
     private String[] format;
@@ -115,7 +116,39 @@ public class CoNLLReader implements AutoCloseable, Iterator<List<Token>>{
     /**
      * Always one read ahead of the next() method so that the answer to hasNext() is always quick.
      */
-    private void  readNextSentence() throws IOException {
+//    private void  readNextSentence() throws IOException {
+//        boolean inSentence = false;
+//        List<Token> sentence = new ArrayList<>();
+//        int id = 1;
+//        String line;
+//        while ((line = reader.readLine()) != null) {
+//            if (line.trim().length() > 0) {
+//                Map<String, String> attributes = new HashMap<>();
+//                String[] items = tokenLineSplitter.split(trailingUnderscores.matcher(line.trim()).replaceAll(""));
+//                if (items.length < format.length) throw new RuntimeException("The CoNLL format specified suggests that there are more token attributes than there are.\nLine: " + line);
+//                if (items.length > format.length) throw new RuntimeException("The CoNLL format specified suggests there there are fewer attributes than there are\nLine: " + line);
+//                for (int i = 0; i < format.length; i++) {
+//                    attributes.put(format[i], items[i]);
+//                }
+//                if (idPresent) { // If the user's format has specified that IDs are already present, then use them
+//                    int givenID = Integer.parseInt(attributes.get("id"));
+//                    attributes.remove("id"); // ID is a separate field from a Token's attributes
+//                    sentence.add(new Token(givenID, attributes)); // Token automatically ensures that "deprel" and "head" attributes are separated out as gold standard annotations
+//                } else {  // Otherwise assign our own.
+//                    sentence.add(new Token(id, attributes)); // Token automatically ensures that "deprel" and "head" attributes are separated out as gold standard annotations
+//                }
+//                inSentence = true;
+//                id++;
+//            } else if (inSentence) break;
+//        }
+//        nextSentence = sentence;
+//        if(line == null) reader.close();
+//    }
+
+    /**
+     * Always one read ahead of the next() method so that the answer to hasNext() is always quick.
+     */
+    private void readNextSentence() throws IOException {
         boolean inSentence = false;
         List<Token> sentence = new ArrayList<>();
         int id = 1;
@@ -123,11 +156,13 @@ public class CoNLLReader implements AutoCloseable, Iterator<List<Token>>{
         while ((line = reader.readLine()) != null) {
             if (line.trim().length() > 0) {
                 Map<String, String> attributes = new HashMap<>();
-                String[] items = tokenLineSplitter.split(trailingUnderscores.matcher(line.trim()).replaceAll(""));
-                if (items.length < format.length) throw new RuntimeException("The CoNLL format specified suggests that there are more token attributes than there are");
-                if (items.length > format.length) throw new RuntimeException("The CoNLL format specified suggests there there are fewer attributes than there are");
+                String[] items = tokenLineSplitter.split(line.trim());
+                if (items.length < format.length) throw new RuntimeException("The CoNLL format specified suggests that there are more token attributes than there are.\nLine: " + line);
+                if (items.length > format.length) throw new RuntimeException("The CoNLL format specified suggests there there are fewer attributes than there are\nLine: " + line);
                 for (int i = 0; i < format.length; i++) {
-                    attributes.put(format[i], items[i]);
+                    if (!format[i].equals("ignore")) {
+                        attributes.put(format[i], items[i]);
+                    }
                 }
                 if (idPresent) { // If the user's format has specified that IDs are already present, then use them
                     int givenID = Integer.parseInt(attributes.get("id"));

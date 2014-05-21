@@ -1,6 +1,7 @@
 package uk.ac.susx.tag.dependencyparser.transitionselectionmethods;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import uk.ac.susx.tag.dependencyparser.Index;
 import uk.ac.susx.tag.dependencyparser.Options;
 import uk.ac.susx.tag.dependencyparser.Parser;
 import uk.ac.susx.tag.dependencyparser.parserstates.ParserState;
@@ -24,30 +25,22 @@ public interface SelectionMethod extends Options.Option {
      * Given the parser's current state, and the recommendations of the classifier for the next transition,
      * apply the best possible transition.
      *
-     * Notice that you have access to both the current parser state, and the parser object itself. Two methods of
-     * note that you will most certainly want to use here are:
-     *
-     *   1. parser.getIndex().
-     *      It is through the Index object that you can resolve transition IDs to their fully qualified Transition instances.
-     *      see Index.getTransition()
-     *
-     *   2. parser.getParseStyle().
-     *      It is through the ParseStyle object that you are able to make transitions.
-     *      see ParseStyle.transition()
      *
      * IMPORTANT NOTE: The Index object retrieved from the parser using parser.getIndex() will be READ-ONLY, so do
      *                 not attempt to call index.getTransitionID() or index.getFeatureID() with the parameter
      *                 "addIfNotPresent" set to true. This ensures that if the parser.parseSentence() function
-     *                 is called concurrently, that threads are not trying to modifying things naughtily.
+     *                 is called concurrently, that threads are not trying to modify things naughtily.
      *
      * @param classifierRecommends The transition that the classifier recommends (which may or may not be feasible)
      * @param decisionScores A mapping from each transition ID to its score according to the classifier
      * @param state The parser's current state
-     * @param parser The parser
+     * @param parseStyle The style of parsing being used. Use this is make transitions on the parser state
+     * @param index The index that knows the mapping between features and their IDs and transitions and their IDs
      */
     public void applyBestTransition(ParseStyle.Transition classifierRecommends,
                                     Int2DoubleMap decisionScores,
                                     ParserState state,
-                                    Parser parser);
+                                    ParseStyle parseStyle,
+                                    Index index);
 
 }

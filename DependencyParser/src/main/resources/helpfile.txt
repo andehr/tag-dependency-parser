@@ -31,6 +31,12 @@ project package structure):
     terminal, and for defining how the feature extraction process should index into the state's 
     datastructures. See the ParserState interface in the parserstates package.
 
+    BEAM SEARCH: currently beam search is not implemented. However, its possibility has been
+                 kept in mind during development. All parser states have a method "copy()",
+                 which will make a complete clone of the current parser state (which will be
+                 required for doing any kind of search of possibly parses). See the copy method
+                 comments in the ParserState abstract class for details.
+
   Parse styles: 
     Parser styles determine what transitions are available to the parser. And therefore they also 
     specify a particular parser state that they require. They are responsible for providing new 
@@ -81,7 +87,7 @@ to which it then assigns each a head token, and a dependency relation type. See 
 outputs for how to deal with this).
 
 Each token is basically a map of feature types to feature values (e.g. PoS --> Noun). Each 
-token has a within-sentence ID (starting from 1, the artificial root is 0).
+token has a within-sentence ID (starting from 1, and the artificial root is 0).
 
 It is possible to create this list yourself, but you'd have to ensure that each token was
 initialised with the correct ID, and pass in all the token attributes yourself.

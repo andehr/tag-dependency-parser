@@ -206,8 +206,8 @@ public class Token {
     public static void copyParsingDecisions(List<Token> originalSentence, Token originalRoot, List<Token> copySentence, Token copyRoot){
 
         // Copy root children info
-        copyRoot.leftmostChild = copySentence.get(originalRoot.leftmostChild.id -1);
-        copyRoot.rightmostChild = copySentence.get(originalRoot.rightmostChild.id -1);
+        copyRoot.leftmostChild = originalRoot.leftmostChild==null? null : copySentence.get(originalRoot.leftmostChild.id -1);
+        copyRoot.rightmostChild = originalRoot.rightmostChild==null? null :copySentence.get(originalRoot.rightmostChild.id -1);
         copyRoot.lDeps = originalRoot.lDeps;
         copyRoot.rDeps = originalRoot.rDeps;
 
@@ -215,13 +215,19 @@ public class Token {
             Token copyToken = copySentence.get(i);
             Token originalToken = originalSentence.get(i);
 
-            int headID = originalToken.getHeadID();
-            copyToken.head = (headID == 0)? copyRoot : copySentence.get(headID-1);
-            copyToken.deprel = originalToken.deprel;
+            if (originalToken.getHead()!=null){
+                int headID = originalToken.getHeadID();
+                copyToken.head = (headID == 0)? copyRoot : copySentence.get(headID-1);
+                copyToken.deprel = originalToken.deprel;
+
+            } else { // Defensive, in case "copySentence" has been interfered with, and has relations where it shouldn't.
+                copyToken.head = null;
+                copyToken.deprel = null;
+            }
 
             // Should never be root, so we don't bounds check the array for ID == 0
-            copyToken.leftmostChild = copySentence.get(originalToken.leftmostChild.id -1);
-            copyToken.rightmostChild = copySentence.get(originalToken.rightmostChild.id -1);
+            copyToken.leftmostChild = originalToken.leftmostChild==null? null : copySentence.get(originalToken.leftmostChild.id -1);
+            copyToken.rightmostChild = originalToken.rightmostChild==null? null : copySentence.get(originalToken.rightmostChild.id -1);
 
             copyToken.lDeps = originalToken.lDeps;
             copyToken.rDeps = originalToken.rDeps;

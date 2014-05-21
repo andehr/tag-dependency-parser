@@ -64,6 +64,10 @@ public class Sentence extends ArrayList<Token> {
         return s;
     }
 
+    /*
+     * Add methods for building a sentence
+     */
+
     public void add(String form) {
         super.add(new Token(size() + 1, form));
     }
@@ -84,6 +88,11 @@ public class Sentence extends ArrayList<Token> {
         add(token.getAtts());
     }
 
+
+    /**
+     * Make a copy of a sentence, where the copy does not retain any of the parsing decisions made by the parser
+     * (though it will contain any gold standard info)
+     */
     public static Sentence unparsedCopy(List<Token> original) {
         Sentence clone = new Sentence(original.size());
         for (Token token : original){
@@ -92,6 +101,12 @@ public class Sentence extends ArrayList<Token> {
         return clone;
     }
 
+    /**
+     * Make an exact duplicate of a sentence and any parse decisions assigned to that sentence by the parser.
+     * For this to be possible, the current artificial root token must be passed in (you can acquire this by
+     * calling parseState.getRootToken() on your current ParseState instance. You also need to pass in a new
+     * root token (Can be acquired through Token.getNewRoot
+     */
     public static Sentence parsedCopy(List<Token> original, Token originalRoot, Token newRoot){
         Sentence copy = unparsedCopy(original);
         Token.copyParsingDecisions(original, originalRoot, copy, newRoot);

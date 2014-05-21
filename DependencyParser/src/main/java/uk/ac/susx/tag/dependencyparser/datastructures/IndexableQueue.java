@@ -1,5 +1,7 @@
 package uk.ac.susx.tag.dependencyparser.datastructures;
 
+import com.google.common.base.Joiner;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -9,15 +11,18 @@ import java.util.NoSuchElementException;
  * This is done by taking a hit to memory. See below.
  *
  * The queue is implemented with an array that is twice (or expansionFactor) as big as the collection with which it
- * was initialised (or size 20 with no initialised collection).
+ * was initialised. Or if nothing is specifies, then size is 10*expansionFactor. Or you can specify an initial capacity,
+ * so that the array is size initialCapacity*expansionFactor.
  *
  * The actual values are stored in the middle of the array (the actual values are centred on the middle of the array,
  * they don't start in the middle):
  *
  *   [ - , - , E, E, E, E, - , - ]
  *
+ * This shows an initial capacity of 4 with expansion factor of 2.
+ *
  * If through adding elements you need a bigger array, then using the expansionFactor, it will create a bigger array
- * and copy over the values.
+ * and copy over the values (like an ArrayList would for example).
  *
  * NOTE:
  *   If you allow the array to grow to massive proportions, and then remove a tonne of elements, and you want the
@@ -41,7 +46,8 @@ import java.util.NoSuchElementException;
  *     parser state must be constructed. And to build such a vector, MANY features such as "the PoS of the 3rd item
  *     on the buffer queue" will be used. So the queue will be indexed into A LOT. Which for a linked list would mean
  *     walking the nodes A LOT (so indexing in to linked list would be worst case Θ(n), instead of the Θ(1) of this
- *     structure). Testing has confirmed a non-trivial speed-up.
+ *     structure). Testing has confirmed a non-trivial speed-up from linked lists. An ArrayList is very inefficient
+ *     for insertions at the front, so it wasn't considered.
  *
  * User: Andrew D. Robertson
  * Date: 25/04/2014
@@ -50,8 +56,8 @@ import java.util.NoSuchElementException;
 public class IndexableQueue<E> implements Iterable<E>{
 
     private Object[] elements;   // The array of length size()*expansionFactor. It contains the queue elements in the middle.
-    private int startIndex;      // The index in *elements* where the elements actually start
-    private int endIndex;        // The index in *elements* where the elements actually start
+    private int startIndex;      // The index in *elements* where the elements actually start (inclusive)
+    private int endIndex;        // The index in *elements* where the elements actually end (exclusive)
     private double expansionFactor; // The factor which influences the size of *elements*. A factor of 2 implies that the size of *elements* will be twice the number of actual elements.
 
     public IndexableQueue() {
@@ -194,13 +200,14 @@ public class IndexableQueue<E> implements Iterable<E>{
         startIndex = (this.elements.length / 2) - ((end-start)/2);
         endIndex = startIndex + (end-start);
 
-        System.arraycopy(elements, start, this.elements, startIndex, end-start);
+        System.arraycopy(elements, start, this.elements, startIndex, end - start);
     }
 
     /**
      * Allows for use in a for-each loop.
      * Iterates in the order of the queue. So you get the elements in the order that you'd get if you
      * repeatedly called pop() (of course without the side-effect of removing them from the queue)
+     * Θ(n)
      */
     @Override
     public Iterator<E> iterator() {
@@ -219,5 +226,13 @@ public class IndexableQueue<E> implements Iterable<E>{
 
             public void remove() { throw new UnsupportedOperationException(); }
         };
+    }
+
+    @Override
+    /**
+     * Θ(n)
+     */
+    public String toString() {
+        return "[" + Joiner.on(", ").join(this) + "]";
     }
 }

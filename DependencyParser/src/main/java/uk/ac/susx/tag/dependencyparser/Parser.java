@@ -13,6 +13,7 @@ import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
 import uk.ac.susx.tag.dependencyparser.transitionselectionmethods.SelectionMethod;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
@@ -202,6 +203,9 @@ public class Parser {
 
     /**
      * Parse sentences in a file, and create an output file with the parsed sentences.
+     *
+     * Only ever holds one sentence in memory at a time.
+     *
      * @param data File containing sentences to be parsed.
      * @param output File to output parsed sentences.
      * @param dataFormat Format of the input file. //TODO create an output format
@@ -259,7 +263,7 @@ public class Parser {
             ParseStyle.Transition t = index.getTransition(classifier.predict(v, classifierOptions, decisionScores));
 
             // Apply the best transition that we can, given what the classifier suggests, and the decision scores it outputs
-            selectionMethod.applyBestTransition(t, decisionScores, state, this);
+            selectionMethod.applyBestTransition(t, decisionScores, state, parseStyle, index);
         }
 
         // Any token whose head has been left unassigned by the parser, is automatically assigned to the root.
@@ -340,6 +344,47 @@ public class Parser {
         } catch (InterruptedException e) { throw new RuntimeException(e); }
     }
 
+    public static void parallelTest() throws IOException {
+        System.out.println(Runtime.getRuntime().availableProcessors());
+
+        Parser p = new Parser();
+//        try {
+//            p = train(new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/treebank3-npbrac-stanforddeps-conll-twittertags-training.txt"));
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+
+        File input = new File("/Volumes/LocalDataHD/adr27/Desktop/testtweets.txt");
+        List<List<Token>> sentences = new ArrayList<>();
+        try (CoNLLReader in = new CoNLLReader(input, "id, form, ignore, pos, ignore, ignore, head, deprel, ignore, ignore")) {
+            while(in.hasNext()) {
+                sentences.add(in.next());
+            }
+        } catch (IOException e) { throw new RuntimeException(e);}
+
+        System.out.println(sentences.size());
+
+        // Serial
+        printStatus("serial start");
+        for (List<Token> sentence : sentences) {
+            p.parseSentence(sentence);
+        }
+        printStatus("serial end");
+
+        // Parallel
+//        printStatus("parallel start");
+//        p.batchParseSentences(sentences, "", "confidence");
+//        printStatus("parallel end");
+
+        try (CoNLLWriter out = new CoNLLWriter(new File("/Volumes/LocalDataHD/adr27/Desktop/testtweets-serial.txt"))) {
+            for (List<Token> sentence : sentences){
+                out.write(sentence);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 /***********************************************************************************************************************
  *
  * Training functionality.
@@ -358,6 +403,20 @@ public class Parser {
         File model = new File(trainingData.getAbsolutePath()+"-model");
         return train(trainingData,
                      "id, form, pos, head, deprel",
+                     new FeatureTable(Resources.getResource("feature_table.txt").openStream()),
+                     index,
+                     model,
+                     "-s 4 -c 0.1 -e 0.1 -B -1",
+                     "linear-svm",
+                     "arc-eager",
+                     "confidence");
+    }
+
+    public static Parser train(File trainingData, String dataFormat) throws IOException {
+        File index = new File(trainingData.getAbsolutePath()+"-index");
+        File model = new File(trainingData.getAbsolutePath()+"-model");
+        return train(trainingData,
+                     dataFormat,
                      new FeatureTable(Resources.getResource("feature_table.txt").openStream()),
                      index,
                      model,
@@ -533,17 +592,6 @@ public class Parser {
  ***********************************************************************************************************************/
 
     /**
-     * The ParseStyle is used for actually checking the feasibility of and performing transitions.
-     */
-    public ParseStyle getParseStyle(){ return parseStyle; }
-
-    /**
-     * The Index is used for indexing and de-indexing transitions and features.
-     */
-    public Index getIndex() { return index; }
-
-
-    /**
      * Extract a feature vector from the current parse state. If the StringIndexer argument is not null, then this
      * indexer will be used for any features that aren't present in the parser's index field. If it is null, then
      * the new IDs will be permanently added to the main index.
@@ -582,6 +630,11 @@ public class Parser {
      * Run tests from command line with default settings.
      */
     public static void main(String[] args) throws Exception {
+        Parser p = train(new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/full_wsj_cmu_pos_stanford_dep.txt"));
+        p.parseFile(new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/development_wsj_cmu_pos_stanford_dep.txt"),
+                    new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/development_wsj_cmu_pos_stanford_dep-parsed.txt"));
+        System.exit(0);
+
         // 0. If no args, then print help-file.
         if (args.length < 1) {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(Resources.getResource("helpfile.txt").openStream(), "UTF-8"))){

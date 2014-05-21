@@ -1,10 +1,13 @@
 package uk.ac.susx.tag.dependencyparser.parserstates;
 
+import uk.ac.susx.tag.dependencyparser.Parser;
 import uk.ac.susx.tag.dependencyparser.datastructures.IndexableQueue;
 import uk.ac.susx.tag.dependencyparser.datastructures.Sentence;
 import uk.ac.susx.tag.dependencyparser.datastructures.Stack;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -99,6 +102,9 @@ public class ParserStateOneStack extends ParserState {
                                new ParserStateOneStack(newRoot, copyStack, copyBuffer));
     }
 
+    /**
+     * Constructor used during copying of a parse state. Allows the creation of a state in a non-initial state.
+     */
     private ParserStateOneStack(Token root, Stack<Token> stack, IndexableQueue<Token> buffer){
         this.root = root;
         this.stack = stack;

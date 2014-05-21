@@ -2,6 +2,7 @@ package uk.ac.susx.tag.dependencyparser.transitionselectionmethods;
 
 import com.google.common.collect.Ordering;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import uk.ac.susx.tag.dependencyparser.Index;
 import uk.ac.susx.tag.dependencyparser.Parser;
 import uk.ac.susx.tag.dependencyparser.parserstates.ParserState;
 import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
@@ -29,10 +30,10 @@ import java.util.Map;
 public class SelectionMethodConfidence implements SelectionMethod {
 
     @Override
-    public void applyBestTransition(ParseStyle.Transition classifierRecommends, Int2DoubleMap decisionScores, ParserState state, Parser parser) {
+    public void applyBestTransition(ParseStyle.Transition classifierRecommends, Int2DoubleMap decisionScores, ParserState state, ParseStyle parseStyle, Index index) {
 
         // Try the transition that the classifier thinks is best.
-        if (parser.getParseStyle().transition(state, classifierRecommends, true)) return;
+        if (parseStyle.transition(state, classifierRecommends, true)) return;
 
         // If the transition is not possible, then continue with the aim of selecting the next best based on the decision scores returned from the classifier
 
@@ -43,7 +44,7 @@ public class SelectionMethodConfidence implements SelectionMethod {
         for(Int2DoubleMap.Entry entry : decisionScores.int2DoubleEntrySet()) {
 
             // Resolve the ID to the actual transition.
-            ParseStyle.Transition t = parser.getIndex().getTransition(entry.getIntKey());
+            ParseStyle.Transition t = index.getTransition(entry.getIntKey());
 
             // If this beats the current best score for this type of transition, then record new best
             if (!bestScorePerBaseTrans.containsKey(t.transitionName) || entry.getDoubleValue() > bestScorePerBaseTrans.get(t.transitionName)) {
@@ -54,7 +55,7 @@ public class SelectionMethodConfidence implements SelectionMethod {
         // Sort the set of distinct arcs by their score, and try them best to worst to see which one is possible.
         // Currently the best overall transition (the one that the classifier suggested and was impossible) will be tried again here. But that's no biggy.
         for (Map.Entry<String, Double> entry : new ScoredTransitionTypeOrdering().reverse().immutableSortedCopy(bestScorePerBaseTrans.entrySet())){
-            if(parser.getParseStyle().transition(state, parser.getIndex().getTransition(bestIDPerBaseTrans.get(entry.getKey())), true))
+            if(parseStyle.transition(state, index.getTransition(bestIDPerBaseTrans.get(entry.getKey())), true))
                 return;
         }
         // If we've reached this point, then all types of transition have been tried and none were possible
