@@ -295,7 +295,7 @@ public class Parser {
         return sentence;
     }
 
-    public <E extends Sentence.ParsableWithPoSAndForm> void batchParsePoSandFormBearingTokens(Collection<List<E>> sentences, final String classifierOptions, final String transitionSelectionMethod){
+    public <E extends Sentence.ParsableWithPoSAndForm> void batchParsePoSandFormBearingTokens(Iterable<List<E>> sentences, final String classifierOptions, final String transitionSelectionMethod){
         ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (final List<E> sentence : sentences) {
             pool.execute(new Runnable() {
@@ -309,7 +309,7 @@ public class Parser {
         } catch (InterruptedException e) { throw new RuntimeException(e); }
     }
 
-    public <E extends Sentence.ParsableWithAttributeMap> void batchParseAttributeMapBearingTokens(Collection<List<E>> sentences, final String classifierOptions, final String transitionSelectionMethod){
+    public <E extends Sentence.ParsableWithAttributeMap> void batchParseAttributeMapBearingTokens(Iterable<List<E>> sentences, final String classifierOptions, final String transitionSelectionMethod){
         ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (final List<E> sentence : sentences) {
             pool.execute(new Runnable() {
@@ -324,7 +324,7 @@ public class Parser {
         } catch (InterruptedException e) { throw new RuntimeException(e); }
     }
 
-    public void batchParseSentences(Collection<List<Token>> sentences, final String classifierOptions, final String transitionSelectionMethod){
+    public void batchParseSentences(Iterable<List<Token>> sentences, final String classifierOptions, final String transitionSelectionMethod){
         ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (final List<Token> sentence : sentences){
             pool.execute(new Runnable() {
