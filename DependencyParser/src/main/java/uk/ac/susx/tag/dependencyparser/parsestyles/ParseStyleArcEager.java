@@ -106,7 +106,7 @@ public class ParseStyleArcEager extends ParseStyle {
 
     private boolean reduce(ParserStateOneStack state, boolean perform){
         Stack<Token> stack = state.getStack();
-        if(stack.isNotEmpty() && stack.peek().getHead() != null){
+        if(stack.isNotEmpty() && stack.peek().hasHead()){
             if(perform) {
                 stack.pop();
             } return true;
@@ -129,7 +129,7 @@ public class ParseStyleArcEager extends ParseStyle {
     private boolean leftArc(ParserStateOneStack state, String label, boolean perform){
         IndexableQueue<Token> buffer = state.getBuffer();
         Stack<Token> stack = state.getStack();
-        if (stack.isNotEmpty() && buffer.isNotEmpty() && !stack.peek().isRoot() && stack.peek().getHead()==null){
+        if (stack.isNotEmpty() && buffer.isNotEmpty() && !stack.peek().isRoot() && !stack.peek().hasHead()){
             if (perform) {
                 Token dependant = stack.pop();
                 Token head = buffer.peek();

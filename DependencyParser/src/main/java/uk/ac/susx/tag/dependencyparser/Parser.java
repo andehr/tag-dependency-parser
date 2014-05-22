@@ -263,7 +263,7 @@ public class Parser {
 
         // Any token whose head has been left unassigned by the parser, is automatically assigned to the root.
         for (Token token : sentence) {
-            if (token.getHead() == null)
+            if (!token.hasHead())
                 token.setHead(state.getRootToken(), rootRelation);
         }
 
@@ -368,13 +368,6 @@ public class Parser {
                      "confidence");
     }
 
-    /**
-     *
-     * @param trainingData
-     * @param dataFormat
-     * @return
-     * @throws IOException
-     */
     public static Parser train(File trainingData, String dataFormat) throws IOException {
         File index = new File(trainingData.getAbsolutePath()+"-index");
         File model = new File(trainingData.getAbsolutePath()+"-model");

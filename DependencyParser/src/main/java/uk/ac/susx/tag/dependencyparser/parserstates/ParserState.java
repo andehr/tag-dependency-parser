@@ -42,7 +42,9 @@ public abstract class ParserState {
 
     /**
      * Make a complete clone of the current state of the parser.
-     * This may be useful when doing Beam Search.
+     * This may be useful when doing Beam Search (in order to allow the parser to freely explore different
+     * possibilities without having to somehow undo transitions, a complete copy of the current parser
+     * state is probably necessary. Then this new copy can be used to explore one set of transitions).
      *
      * Bear in mind that the state of the parser includes what arcs have already been assigned to the tree.
      * These arcs are stored on the input tokens themselves. So in order to provide a complete proper clone

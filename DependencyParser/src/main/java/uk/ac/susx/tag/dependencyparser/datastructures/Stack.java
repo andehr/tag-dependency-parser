@@ -9,6 +9,8 @@ import java.util.NoSuchElementException;
 /**
  * Simple FILO data structure implemented using array list.
  *
+ * No clever things going on, just for convenience of having index 0 mean that last element instead of first.
+ *
  * Created by Andrew D. Robertson on 11/04/2014.
  */
 public class Stack<E> implements Iterable<E> {

@@ -35,6 +35,9 @@ public class ParserStateOneStack extends ParserState {
         buffer = new IndexableQueue<>(sentence);
     }
 
+    /*
+     * Access to data structures is required by subclasses of ParseStyle, in order to execute transitions.
+     */
     public Stack<Token> getStack() { return stack; }
     public IndexableQueue<Token> getBuffer() { return buffer; }
 

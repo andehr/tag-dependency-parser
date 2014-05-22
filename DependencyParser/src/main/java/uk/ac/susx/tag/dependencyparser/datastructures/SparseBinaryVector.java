@@ -23,6 +23,9 @@ import java.util.List;
  *
  *     X = 1 - (1 / (number of non-zero values))
  *
+ *
+ * - Backed by a hashmap of primitives
+ *
  * Created by Andrew D. Robertson on 13/04/2014.
  */
 public class SparseBinaryVector {

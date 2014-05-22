@@ -148,6 +148,10 @@ public class Token {
     public int numRightDependants() { return rDeps; }
     public int numDependants()  { return lDeps + rDeps; }
 
+    public boolean hasHead(){
+        return head != null;
+    }
+
     public void setHead(Token head, String deprel) {
         this.head = head;
         this.deprel = deprel;
@@ -238,7 +242,7 @@ public class Token {
      * Static validation methods
      */
     public static boolean areIDsConsistent(List<Token> sentence) {
-        for (int i = 0; i < sentence.size(); i++) {
+        for (int i = 1; i <= sentence.size(); i++) {
             if (sentence.get(i).getID() != i) return false;
         } return true;
     }
