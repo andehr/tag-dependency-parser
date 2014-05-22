@@ -34,7 +34,7 @@ project package structure):
     BEAM SEARCH: currently beam search is not implemented. However, its possibility has been
                  kept in mind during development. All parser states have a method "copy()",
                  which will make a complete clone of the current parser state (which will be
-                 required for doing any kind of search of possibly parses). See the copy method
+                 required for doing any kind of search of possible parses). See the copy method
                  comments in the ParserState abstract class for details.
 
   Parse styles: 

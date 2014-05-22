@@ -1,4 +1,4 @@
-#There must be no whitespace inside brackets. Any whitespace between items though.
+# There must be no whitespace inside brackets. Any whitespace between items though. See FeatureTable class in top-level package for details.
 
 ldep(stk[0]) : deprel : pos
 rdep(stk[0]) : deprel : pos

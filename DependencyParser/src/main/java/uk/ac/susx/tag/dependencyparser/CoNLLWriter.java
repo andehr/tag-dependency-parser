@@ -3,7 +3,11 @@ package uk.ac.susx.tag.dependencyparser;
 import com.google.common.base.Joiner;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -24,7 +28,8 @@ import java.util.regex.Pattern;
  *   id : the ID of the token
  *   deprel : the dependency relation assigned to this token by the parser (or _ if no such relation)
  *   head   : the ID of the head token assigned to this token by the parser (or _ if no such head)
- *   blank  : a filler, simply prints an underscore
+ *   ignore  : a filler, simply prints an underscore (effectively providing an ignored attribute, perhaps
+ *             for subsequent processors to fill for example)
  *
  * User: Andrew D. Robertson
  * Date: 24/04/2014
@@ -37,7 +42,7 @@ public class CoNLLWriter implements AutoCloseable {
     private String[] format;
 
     public CoNLLWriter (File output) throws IOException {
-        this(output, "id, form, blank, blank, pos, blank, blank, blank, head, blank, deprel, blank, blank, blank");
+        this(output, "id, form, ignore, ignore, pos, ignore, ignore, ignore, head, ignore, deprel, ignore, ignore, ignore");
     }
 
     public CoNLLWriter (File output, String outputFormat) throws IOException {
@@ -57,7 +62,7 @@ public class CoNLLWriter implements AutoCloseable {
     public static String formatToken(Token token, String[] outputFormat) {
         List<String> attributes = new ArrayList<>();
         for (String attributeType : outputFormat){
-            if (attributeType.equals("blank")){
+            if (attributeType.equals("ignore")){
                 attributes.add("_");
             } else if (attributeType.equals("id")) {
                 attributes.add(Integer.toString(token.getID()));

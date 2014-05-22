@@ -1,13 +1,10 @@
 package uk.ac.susx.tag.dependencyparser.parserstates;
 
-import uk.ac.susx.tag.dependencyparser.Parser;
 import uk.ac.susx.tag.dependencyparser.datastructures.IndexableQueue;
 import uk.ac.susx.tag.dependencyparser.datastructures.Sentence;
 import uk.ac.susx.tag.dependencyparser.datastructures.Stack;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 /**

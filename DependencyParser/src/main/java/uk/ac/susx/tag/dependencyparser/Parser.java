@@ -38,10 +38,9 @@ import java.util.concurrent.TimeUnit;
  *  If you want to parse something with a trained parser, then you should use one of the constructors with the
  *  appropriate arguments in the top half of the class. Then pass your data to a "parseSentence" or "parseFile" method.
  *
- *
  * CONCURRENCY NOTE:
- *  I have made every effort to ensure that "parseSentence" methods on this class can be called concurrently, but this
- *  functionality remains to be tested. TODO
+ *  "parseSentence" methods can be called concurrently.
+ *  "parseFile" methods can be called concurrently, provided that they are operating on different input/output files.
  *
  * Created by Andrew D. Robertson on 13/04/2014.
  */
@@ -61,10 +60,7 @@ public class Parser {
     private Classifier classifier;     // This is the machine learning model used to predict the correct transition to make.
     private FeatureTable featureTable; // This represents the specification of what happens during feature extraction.
     private ParseStyle parseStyle;     // This represents how parsing is to be accomplished (i.e. what datastructure, what transitions)
-    private SelectionMethod selectionMethod; // This represents how we use the classifier output to select the next transition
-
-
-
+    private SelectionMethod selectionMethod;  // This represents how we use the classifier output to select the next transition
 
 /***********************************************************************************************************************
  *
@@ -207,7 +203,7 @@ public class Parser {
      *
      * @param data File containing sentences to be parsed.
      * @param output File to output parsed sentences.
-     * @param dataFormat Format of the input file. //TODO create an output format
+     * @param dataFormat Format of the input and output file. See CoNLLReader and CoNLLWriter
      * @param classifierOptions Options passed to the classifier at prediction time
      * @param transitionSelectionMethod Method of deciding which transition to select
      */
@@ -372,6 +368,13 @@ public class Parser {
                      "confidence");
     }
 
+    /**
+     *
+     * @param trainingData
+     * @param dataFormat
+     * @return
+     * @throws IOException
+     */
     public static Parser train(File trainingData, String dataFormat) throws IOException {
         File index = new File(trainingData.getAbsolutePath()+"-index");
         File model = new File(trainingData.getAbsolutePath()+"-model");
@@ -555,8 +558,6 @@ public class Parser {
      * Extract a feature vector from the current parse state. If the StringIndexer argument is not null, then this
      * indexer will be used for any features that aren't present in the parser's index field. If it is null, then
      * the new IDs will be permanently added to the main index.
-     *
-     * NOTE:
      */
     private SparseBinaryVector getFeatureVector(ParserState state, StringIndexer unseenFeatures){
         SparseBinaryVector v = new SparseBinaryVector();
@@ -585,9 +586,30 @@ public class Parser {
         System.out.println("<" + new Date() + ">: " + message);
     }
 
+    /**
+     * Convert one format to another.
+     */
+    public static void convert(File input, String inputFormat, File output, String outputFormat) throws IOException {
+        try (CoNLLWriter outfile = new CoNLLWriter(output, outputFormat);
+             CoNLLReader infile  = new CoNLLReader(input, inputFormat)){
+
+            while (infile.hasNext()){
+                outfile.write(infile.next());
+            }
+        }
+    }
 
     /**
      * Run tests from command line with default settings.
+     *
+     * There are 4 modes to choose from:
+     *
+     *   0. Output help-file and available options for parsing. (0 args)
+     *   1. Train a new parser (1 arg)
+     *   2. Parse a file and write out result (2 args)
+     *   3. Convert a file from one format to another (4 args)
+     *
+     * See code for specification of args.
      */
     public static void main(String[] args) throws Exception {
         // 0. If no args, then print help-file.
@@ -602,16 +624,30 @@ public class Parser {
             Options.printAvailableOptionsSummary();
         }
 
-        // 1. Train cycle with all defaults, supply only the training data file path.
-        else if (args.length == 1)
-            // trainingFile
+        /*
+         * 1. Train cycle with all defaults, supply only the training data file path.
+         *    Args: training file path
+         */
+        else if (args.length == 1){
             train(new File(args[0]));
+        }
 
-        // 2. Predict cycle on a file. All defaults, supply input file and output file path.
-        else if (args.length == 2)
-            // fileToBeParsed outputFile
+        /*
+         * 2. Predict cycle on a file. All defaults, supply input file and output file path.
+         *    Args: path of file to be parsed, path of output file
+         */
+        else if (args.length == 2) {
             new Parser().parseFile(new File(args[0]), new File(args[1]));
+        }
 
-        else throw new RuntimeException("Unrecognised arguments.");
+        /*
+         * 3. Convert the format of the sentences in a file
+         *    Args: input file path, input file format, output file path, output file format
+         */
+        else if (args.length == 4) {
+            convert(new File(args[0]), args[1], new File(args[2]), args[3]);
+        }
+
+        else throw new RuntimeException("Unrecognised arguments. See main method of Parser class in top-level package.");
     }
 }

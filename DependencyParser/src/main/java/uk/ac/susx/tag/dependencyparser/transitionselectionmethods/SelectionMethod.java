@@ -3,7 +3,6 @@ package uk.ac.susx.tag.dependencyparser.transitionselectionmethods;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import uk.ac.susx.tag.dependencyparser.Index;
 import uk.ac.susx.tag.dependencyparser.Options;
-import uk.ac.susx.tag.dependencyparser.Parser;
 import uk.ac.susx.tag.dependencyparser.parserstates.ParserState;
 import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
 
