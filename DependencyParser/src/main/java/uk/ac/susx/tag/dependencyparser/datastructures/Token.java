@@ -241,6 +241,7 @@ public class Token {
     /*
      * Static validation methods
      */
+
     public static boolean areIDsConsistent(List<Token> sentence) {
         for (int i = 1; i <= sentence.size(); i++) {
             if (sentence.get(i).getID() != i) return false;

@@ -593,6 +593,20 @@ public class Parser {
     }
 
     /**
+     * duh.
+     */
+    public static void printHelpfileAndOptions() throws IOException {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(Resources.getResource("helpfile.txt").openStream(), "UTF-8"))){
+            String line;
+            while ((line=br.readLine()) != null){
+                System.out.println(line);
+            }
+        }
+        // Print a summary of the options the parser finds at run time (should include any options you've defined to be in the appropriate package hierarchy. See Options class.
+        Options.printAvailableOptionsSummary();
+    }
+
+    /**
      * Run tests from command line with default settings.
      *
      * There are 4 modes to choose from:
@@ -607,14 +621,7 @@ public class Parser {
     public static void main(String[] args) throws Exception {
         // 0. If no args, then print help-file.
         if (args.length < 1) {
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(Resources.getResource("helpfile.txt").openStream(), "UTF-8"))){
-                String line;
-                while ((line=br.readLine()) != null){
-                    System.out.println(line);
-                }
-            }
-            // Print a summary of the options the parser finds at run time (should include any options you've defined to be in the appropriate package hierarchy. See Options class.
-            Options.printAvailableOptionsSummary();
+            printHelpfileAndOptions();
         }
 
         /*
@@ -643,4 +650,6 @@ public class Parser {
 
         else throw new RuntimeException("Unrecognised arguments. See main method of Parser class in top-level package.");
     }
+
+
 }

@@ -1,7 +1,7 @@
 ==================================================================================================
 This is the dependency parser guide. Where appropriate, it will defer to the comments in the 
-source code of particular classes. Its purpose is to provide a general guide for the use and 
-development of the  parser project.
+actual source code comments of particular classes. Its purpose is to provide a general starting
+point for the use and development of the  parser project.
 ==================================================================================================
 
 Contents:
@@ -19,6 +19,9 @@ a finite state machine, which consumes tokens from an input sentence and changes
 transitions, the side effects of some of which are to produce dependency relations with the aim
 of assigning a full dependency tree to the input sentence.
 
+In particular, two styles of transition-based dependency parsing are implemented, Joakim Nivre's
+"arc standard" and "arc eager" styles. The system defaults to arc eager.
+
 The top-level class is the Parser class. This class contains methods for training and prediction
 using the parser.
 
@@ -29,7 +32,8 @@ project package structure):
     Parser states define what data structures the parser states are composed of. They are 
     responsible for initialisation of the state for a new sentence, for determining if the state is 
     terminal, and for defining how the feature extraction process should index into the state's 
-    datastructures. See the ParserState interface in the parserstates package.
+    data-structures (e.g. "stk[0]" refers to the top token on the stack).
+    See the ParserState interface in the parserstates package.
 
     BEAM SEARCH: currently beam search is not implemented. However, its possibility has been
                  kept in mind during development. All parser states have a method "copy()",
@@ -40,9 +44,9 @@ project package structure):
   Parse styles: 
     Parser styles determine what transitions are available to the parser. And therefore they also 
     specify a particular parser state that they require. They are responsible for providing new 
-    parser states of the appropriate type, for checking feasibility of and performing transitions, 
-    and also during training, for using the gold standard to select the appropriate transition. See 
-    the ParseStyle class in the parsestyles package.
+    ParserState instances of the appropriate type, for checking feasibility of and performing transitions,
+    and also during training for using the gold standard annotations to select the appropriate transition.
+    See  the ParseStyle class in the parsestyles package.
 
   Classifiers:
     At each step of parsing, the best transition to make must be inferred. A classifier that 
@@ -61,9 +65,10 @@ project package structure):
     Feature selection is a rich and configurable aspect of training and prediction. A full
     specification of all features to be extracted whenever the parser produces a feature
     vector of its state is referred to as a "feature table". A default feature table is
-    provided, but the user may provide their own. Generally, any feature of a token
-    can be used that the user specified when defining the input format of sentences. 
-    So, if the user said that tokens have "PoS" and "Morphology" feature types, then these
+    provided, but the user may provide their own. Generally, any attribute of a token
+    can be specified here as a feature to be extracted.
+
+    So, if the user provides tokens  that have "PoS" and "Morphology" attributes, then these
     feature types will be available for extraction, and can be specified in the feature 
     table. Addressing functions are used to reference particular tokens in the parser's 
     state. See the FeatureTable class in the top-level package.
@@ -89,8 +94,8 @@ outputs for how to deal with this).
 Each token is basically a map of feature types to feature values (e.g. PoS --> Noun). Each 
 token has a within-sentence ID (starting from 1, and the artificial root is 0).
 
-It is possible to create this list yourself, but you'd have to ensure that each token was
-initialised with the correct ID, and pass in all the token attributes yourself.
+It is possible to create this list pf Token objects yourself, but you'd have to ensure
+that each token was initialised with the correct ID, and pass in all the token attributes yourself.
 
 A better solution in most cases is to use the Sentence class in the datastructures package.
 A Sentence object is essentially a list of Tokens (so can be passed directly to the parse
@@ -98,7 +103,7 @@ methods), whose instantiation is mostly handled for you if you do it right.
 
 Essentially, you ensure that whatever data type you're using to hold your tokens implements
 one of the interfaces defined in the Sentence class, then pass a bunch of them to one of the
-static create methods. It'll then do all the proper initialisation for you.
+static "create" methods. It'll then do all the proper initialisation for you.
 
 Alternatively, you can create an empty Sentence using the constructor, then make successive
 calls to the add() methods with the appropriate data, and again the Token objects'll be
@@ -116,21 +121,21 @@ You can access the head Token by calling "getHead()" on a Token object.
 
 Alternatively you can call "getHeadID()" if you just want the ID of the head Token.
 
-Functionality is being rolled in that enables the parser to directly annotate your
+Functionality is being rolled in, which enables the parser to directly annotate your
 objects with dependency relations, using the ParsableWithAttributeMap and
-ParsableWithPoSandForm interfaces. Rather than returning these Token objects that
-you then query for head and deprel. We still need to maintain the Token objects
+ParsableWithPoSandForm interfaces (instead of you having to manually extract the
+relations using getDeprel() and getHeadID()). We still need to maintain the Token objects
 internally though, because they carry other data. So this is purely a cosmetic gain.
 
 -- 4. Training --
 
 Training methods are located in the Parser class in the top-level package.
 
-A file containing sentence pre-annotated with dependencies is expected.
+A file containing sentences pre-annotated with dependencies is expected.
 
 See the CoNLLReader class in the top-level package for the data format expected. A 
 CoNLLReader requires a "data format string", which you can pass to it through the training 
-methods. This allows you to specify what features each Token is associated with.
+methods. This allows you to specify what attributes each Token is associated with.
 
 The training methods explain other inputs necessary. The different training methods are
 there simply to give sensible defaults where desired.
@@ -139,9 +144,9 @@ This could consume A LOT of RAM. The default feature table leads to a model that
 up 8 - 11 GB during training (blame support vector machines and massive feature models)
 Once that's done though, to use the actual training parser requires around 1-2GB, probably less.
 
--- 5. Extension of functionality --
+-- 5. Extension of functionality--
 
-The parser is designed to be easily extendable in several areas. In fact, you can add classifiers,
+The parser is designed to be easily extensible in several areas. In fact, you can add classifiers,
 parser states, parse styles, and transition selection methods all without having to change the 
 source code and recompile. Simply create a project with this one as a dependency, and add classes
 to the relevant package hierarchy. See the Options class in the top-level package. MAGIC.
