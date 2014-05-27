@@ -105,6 +105,23 @@ public class StringIndexer {
 
 /*****************************
  * JSON provides a more flexible and reusable serialisation here.
+ *
+ * Format:
+ *
+ *   {
+ *       idStart : IDSTART
+ *       strings : [ string1, string2, ..., stringN]
+ *   }
+ *
+ * Where:
+ *
+ *   IDSTART = an integer. The number from which the indexer begins indexing
+ *   strings = a list of the strings which the indexer indexes, in the order in which they were indexed.
+ *
+ * This means that although I representation is in plain text, rather than binary, so means re-indexing
+ * when reading in, the data is completely readable, and since we don't have to store the map AND
+ * the array, it's actually quite compact. A full write-out and read-in of parser-size indexes takes
+ * around a second.
  *****************************/
 
     public void writeJson(JsonWriter writer) throws IOException {

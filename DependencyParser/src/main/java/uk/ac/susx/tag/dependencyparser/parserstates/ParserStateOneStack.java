@@ -31,7 +31,7 @@ public class ParserStateOneStack extends ParserState {
     @Override
     public void initialise(List<Token> sentence) {
         root = Token.newRootToken();
-        stack = new Stack<>(root); //TODO check if preallocation of Stack(sentencesize) speeds things up
+        stack = new Stack<>(root);
         buffer = new IndexableQueue<>(sentence);
     }
 

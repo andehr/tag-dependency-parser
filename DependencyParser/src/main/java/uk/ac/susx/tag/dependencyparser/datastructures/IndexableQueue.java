@@ -1,7 +1,6 @@
 package uk.ac.susx.tag.dependencyparser.datastructures;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -11,19 +10,27 @@ import java.util.NoSuchElementException;
  * A queue which allows efficient additions to either end (amortized constant), and can still be indexed in Θ(1).
  * This is done by taking a hit to memory. See below.
  *
- * The queue is implemented with an array that is twice (or expansionFactor) as big as the collection with which it
- * was initialised. Or if nothing is specifies, then size is 10*expansionFactor. Or you can specify an initial capacity,
- * so that the array is size initialCapacity*expansionFactor.
+ * It is best suited to the situation in which you are mostly dealing with a large bulk of items that you plan to
+ * fully consume, maybe adding some to the front and back as you go. Things are more efficient if you fully consume
+ * things before adding too much of a bulk onto the queue again (see push() comments).
+ *
+ * The queue is implemented with an array that is about 1.5 times the size of the collection collection with which it
+ * was initialised. Or if nothing is specified, then size is 20. Or you can specify an initial capacity,
+ * so that the array is size initialCapacity*2 (so it can support either initialCapacity number of pushes or addToFront
+ * operations).
  *
  * The actual values are stored in the middle of the array (the actual values are centred on the middle of the array,
- * they don't start in the middle):
+ * they don't start in the middle, unless you initialised the queue without any elements):
  *
  *   [ - , - , E, E, E, E, - , - ]
  *
- * This shows an initial capacity of 4 with expansion factor of 2.
- *
- * If through adding elements you need a bigger array, then using the expansionFactor, it will create a bigger array
- * and copy over the values (like an ArrayList would for example).
+ * If through adding elements you need a bigger array, it will create a bigger array and copy over the values (like an
+ * ArrayList would for example). Much like an ArrayList, if you initialise it with a collection, then the array will
+ * just start out the same size as the collection, and only grow bigger if you try to add elements before removing them.
+ * Remember that you only create space for a push() by calling removeFromEnd(), and only create space for an
+ * addToFront() by calling pop(). Which isn't ideal for a queue, but this is part of the sacrifice necessary for allowing
+ * indexing efficiently alongside the ability to add and remove at both ends efficiently. Hence why it's best to deal
+ * with one bulk and a few extras per queue.
  *
  * NOTE:
  *   If you allow the array to grow to massive proportions, and then remove a tonne of elements, and you want the
@@ -108,7 +115,7 @@ public class IndexableQueue<E> implements Iterable<E>{
 
     /**
      * Initialisation with elements. Create a queue big enough to hold the data, plus enough space to make
-     * *additionalCapacity* number of calls to push().
+     * *additionalCapacity* number of calls to push() or addToFront().
      */
     public IndexableQueue(Collection<? extends E> elements, int additionalCapacity){
         Object[] toBeAdded = elements.toArray();
@@ -141,8 +148,15 @@ public class IndexableQueue<E> implements Iterable<E>{
      * Amortized constant
      */
     public void push(E element) {
+        // If true, then there's no room to push
         if (endIndex >= elements.length){
-            newElementArray(elements, startIndex, endIndex);
+            // If the array is empty and big enough to hold a push from the middle, then just rearrange the pointers
+            if (size() == 0 && elements.length >= 2){
+                startIndex = elements.length / 2;
+                endIndex = startIndex;
+            } else { // Otherwise we'll create a bigger array for the new element
+                newElementArray(elements, startIndex, endIndex);
+            }
         }
         elements[endIndex] = element;
         endIndex++;
@@ -170,8 +184,15 @@ public class IndexableQueue<E> implements Iterable<E>{
      * Amortized constant
      */
     public void addToFront(E element) {
-        if (startIndex == 0) {  // If our start index has gone to 0, then the array has no more space to prepend items
-            newElementArray(elements, startIndex, endIndex);  // So grow the array
+        // If our start index has gone to 0, then the array has no more space to prepend items
+        if (startIndex == 0) {
+            // If array is empty and big enough to hold an addToFront in the middle, then just move the pointers
+            if(size()==0 && elements.length > 2){
+                startIndex = elements.length / 2;
+                endIndex = startIndex;
+            } else { // Otherwise make a bigger array for the data
+                newElementArray(elements, startIndex, endIndex);
+            }
         }
         elements[--startIndex] = element;
     }
