@@ -1,6 +1,7 @@
 package uk.ac.susx.tag.dependencyparser.datastructures;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -58,32 +59,63 @@ public class IndexableQueue<E> implements Iterable<E>{
     private Object[] elements;   // The array of length size()*expansionFactor. It contains the queue elements in the middle.
     private int startIndex;      // The index in *elements* where the elements actually start (inclusive)
     private int endIndex;        // The index in *elements* where the elements actually end (exclusive)
-    private double expansionFactor; // The factor which influences the size of *elements*. A factor of 2 implies that the size of *elements* will be twice the number of actual elements.
 
+    /*
+     * Initialisation without elements
+     */
+
+    /**
+     * Initialise to be big enough to make at least 10 calls to push() or addToFront() before having to reallocate the
+     * array.
+     */
     public IndexableQueue() {
-        this(10, 2);
+        this(10);
     }
 
-    public IndexableQueue(double expansionFactor) {
-        this(10, expansionFactor);
-    }
-
+    /**
+     * By setting the initialCapacity to X, you are asking for enough space to make at least X calls to push() or
+     * addToFront() before having to reallocate memory. This amounts to making an array of size 3X+2
+     */
     public IndexableQueue(int initialCapacity) {
-        this(initialCapacity, 2);
-    }
-
-    public IndexableQueue(int initialCapacity, double expansionFactor) {
-        this.expansionFactor = expansionFactor;
         newElementArray(initialCapacity);
     }
 
-    public IndexableQueue(Collection<? extends E> elements) {
-        this(elements, 2);
+    /**
+     * Create an empty queue big enough to support *addToFrontCapacity* number of addToFront() calls, and *pushCapacity*
+     * number of calls to push().
+     *
+     * Size of array = addToFrontCapacity+pushCapacity
+     */
+    public IndexableQueue(int addToFrontCapacity, int pushCapacity){
+        newElementArray(addToFrontCapacity, pushCapacity);
     }
 
-    public IndexableQueue(Collection<? extends E> elements, double expansionFactor){
-        this.expansionFactor = expansionFactor;
-        newElementArray(elements.toArray());
+    /*
+     * Initialisation with elements. Create a queue just big enough to hold the data.
+     *
+     * Any subsequent addition of elements would require reallocation of data array.
+     *
+     * Except when:
+     *
+     *  - Calling addToFront() if the user has made a previous call to pop() (thereby making space at the front)
+     *  - Calling push() if the user has made a previous call to removeFromEnd() (thereby making space at the end)
+     */
+    public IndexableQueue(Collection<? extends E> elements){
+        this.elements = elements.toArray();
+        startIndex = 0;
+        endIndex = elements.size();
+    }
+
+    /**
+     * Initialisation with elements. Create a queue big enough to hold the data, plus enough space to make
+     * *additionalCapacity* number of calls to push().
+     */
+    public IndexableQueue(Collection<? extends E> elements, int additionalCapacity){
+        Object[] toBeAdded = elements.toArray();
+        this.elements = new Object[toBeAdded.length + (2*additionalCapacity)];
+        startIndex = (this.elements.length / 2) - ((toBeAdded.length)/2);
+        endIndex = startIndex + toBeAdded.length;
+        System.arraycopy(toBeAdded, 0, this.elements, startIndex, toBeAdded.length);
     }
 
     /**
@@ -138,10 +170,24 @@ public class IndexableQueue<E> implements Iterable<E>{
      * Amortized constant
      */
     public void addToFront(E element) {
-        if (startIndex == 0) {
-            newElementArray(elements, startIndex, endIndex);
+        if (startIndex == 0) {  // If our start index has gone to 0, then the array has no more space to prepend items
+            newElementArray(elements, startIndex, endIndex);  // So grow the array
         }
         elements[--startIndex] = element;
+    }
+
+    /**
+     * Get and remove the last element on the queue.
+     *
+     * Θ(1)
+     */
+    public E removeFromEnd() {
+        if (size() > 0) {
+            E element = (E)elements[endIndex-1];
+            elements[endIndex-1] = null;
+            endIndex--;
+            return element;
+        } else throw new NoSuchElementException();
     }
 
     /**
@@ -166,7 +212,7 @@ public class IndexableQueue<E> implements Iterable<E>{
 
     /**
      * Use this if you allowed the array to grow to massive proportions, and then removed a tonne of elements,
-     * if you want the underlying array to be reduced back down to expansionFactor*size of the remaining elements.
+     * if you want the underlying array to be reduced back down to 1.5*size+2 of the remaining elements.
      * Θ(n)
      */
     public void trim() {
@@ -174,12 +220,18 @@ public class IndexableQueue<E> implements Iterable<E>{
     }
 
     /**
-     * Create an array with an initial capacity.
-     * Bear in mind that the actual size of the underlying array will be initialCapacity*expansionFactor.
+     * Bear in mind that the actual size of the underlying array will be initialCapacity*2 (in order to allow for
+     * *initialCapacity* number of calls to push() and addToFront()).
      */
     private void newElementArray(int initialCapacity) {
-        this.elements = new Object[(int)Math.ceil(initialCapacity*expansionFactor)];
-        startIndex = (this.elements.length / 2) - (initialCapacity / 2);
+        this.elements = new Object[2 * initialCapacity];
+        startIndex = (this.elements.length / 2);
+        endIndex = startIndex;
+    }
+
+    private void newElementArray(int addToFrontCapacity, int pushCapacity){
+        this.elements = new Object[addToFrontCapacity+pushCapacity];
+        startIndex = addToFrontCapacity;
         endIndex = startIndex;
     }
 
@@ -196,11 +248,15 @@ public class IndexableQueue<E> implements Iterable<E>{
         if (start < 0 || end > elements.length)
             throw new RuntimeException("Invalid start and end arguments.");
 
-        this.elements = new Object[(int)Math.ceil((end-start)*expansionFactor)];
+        this.elements = new Object[calculateNewSize(end-start)];
         startIndex = (this.elements.length / 2) - ((end-start)/2);
         endIndex = startIndex + (end-start);
 
         System.arraycopy(elements, start, this.elements, startIndex, end - start);
+    }
+
+    private int calculateNewSize(int numElements){
+        return (3*numElements)/2 + 2;
     }
 
     /**

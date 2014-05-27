@@ -31,7 +31,7 @@ public class ParserStateOneStack extends ParserState {
     @Override
     public void initialise(List<Token> sentence) {
         root = Token.newRootToken();
-        stack = new Stack<>(root);
+        stack = new Stack<>(root); //TODO check if preallocation of Stack(sentencesize) speeds things up
         buffer = new IndexableQueue<>(sentence);
     }
 
@@ -86,7 +86,7 @@ public class ParserStateOneStack extends ParserState {
         List<Token> copySentence = Sentence.parsedCopy(currentSentence, root, newRoot);
 
         // We know capacity, so set initial capacity
-        IndexableQueue<Token> copyBuffer = new IndexableQueue<>(currentSentence.size(), 2.0);
+        IndexableQueue<Token> copyBuffer = new IndexableQueue<>(0, currentSentence.size());
         for (Token token : buffer){
             int id = token.getID();
             copyBuffer.push((id == 0) ? newRoot : copySentence.get(id - 1));
