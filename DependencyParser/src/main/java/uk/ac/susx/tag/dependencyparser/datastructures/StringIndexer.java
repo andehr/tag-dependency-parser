@@ -110,13 +110,13 @@ public class StringIndexer {
  *
  *   {
  *       idStart : IDSTART
- *       strings : [ string1, string2, ..., stringN]
+ *       strings : [ string1, string2, ..., stringN ]
  *   }
  *
  * Where:
  *
  *   IDSTART = an integer. The number from which the indexer begins indexing
- *   strings = a list of the strings which the indexer indexes, in the order in which they were indexed.
+ *   strings = an array of the strings which the indexer indexes, in the order in which they were indexed.
  *
  * This means that although I representation is in plain text, rather than binary, so means re-indexing
  * when reading in, the data is completely readable, and since we don't have to store the map AND

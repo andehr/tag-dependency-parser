@@ -119,7 +119,6 @@ public class Sentence extends ArrayList<Token> {
     public static interface PoSandFormBearing {
 
         public String getForm();
-
         public String getPos();
     }
 

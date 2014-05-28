@@ -54,7 +54,7 @@ public class SelectionMethodConfidence implements SelectionMethod {
                 bestIDPerBaseTrans.put(t.transitionName, entry.getIntKey());
             }
         }
-        // Sort the set of distinct arcs by their score, and try them best to worst to see which one is possible.
+        // 3. Sort the set of distinct arcs by their score, and try them best to worst to see which one is possible.
         // NOTE: Currently the best overall transition (the one that the classifier suggested and was impossible) will be tried again here. But that's no biggy.
         for (Map.Entry<String, Double> entry : new ScoredTransitionTypeOrdering().reverse().immutableSortedCopy(bestScorePerBaseTrans.entrySet())){
             if(parseStyle.transition(state, index.getTransition(bestIDPerBaseTrans.get(entry.getKey())), true))

@@ -46,8 +46,7 @@ import java.util.NoSuchElementException;
  *   - As far as I can see, the current styles of parsing would actually never need to grow the
  *     array (because they will always take items from the queue before adding items back. So technically I could
  *     just use a fixed length array equal to the actual collection size. But for the sake of maintainability and
- *     extensibility, a growing array will be used (perhaps parse styles on an individual basis could select an expansion
- *     factor of 1 if they guarantee this behaviour TODO).
+ *     extensibility, a growing array will be used (though it'll never need to grow probably).
  *
  *   - At least one of the default ParseStyle implementations performs insertions at both ends of the queue. So you'd
  *     think that a linked list might suffice. However, for EVERY SINGLE parsing decision, a feature vector of the

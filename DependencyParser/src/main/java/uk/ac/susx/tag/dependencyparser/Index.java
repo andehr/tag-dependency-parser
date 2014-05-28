@@ -79,7 +79,9 @@ public class Index {
     }
 
     /*
-       JSON saving an loading for better flexibility.
+     *  JSON saving an loading for better flexibility.
+     *
+     *  The StringIndexers know how to JSON-ise themselves.
      */
 
     public void save(File jsonOutput) throws IOException {
