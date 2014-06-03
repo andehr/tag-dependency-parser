@@ -87,8 +87,8 @@ public class Index {
     public void save(File jsonOutput) throws IOException {
         try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(new FileOutputStream(jsonOutput), "UTF-8"))){
             writer.beginObject();
-            writer.name("featureIndex"); features.writeJson(writer);
-            writer.name("transitionIndex"); transitions.writeJson(writer);
+                writer.name("featureIndex"); features.writeJson(writer);
+                writer.name("transitionIndex"); transitions.writeJson(writer);
             writer.endObject();
         }
     }
@@ -109,5 +109,21 @@ public class Index {
                 }
             } reader.endObject();
         } return index;
+    }
+
+    /**
+     * For curious parties. You can convert the JSON file of a saved index, into a
+     * pretty-printed version. This allows you to see the features that are extracted
+     * and all the possible transitions a parser with this index can make.
+     */
+    public static void prettyPrint(File jsonInput, File jsonOutput) throws IOException {
+        Index index = load(jsonInput);
+        try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(new FileOutputStream(jsonOutput), "UTF-8"))){
+            writer.setIndent("  ");
+            writer.beginObject();
+                writer.name("featureIndex"); index.features.writeJson(writer);
+                writer.name("transitionIndex"); index.transitions.writeJson(writer);
+            writer.endObject();
+        }
     }
 }

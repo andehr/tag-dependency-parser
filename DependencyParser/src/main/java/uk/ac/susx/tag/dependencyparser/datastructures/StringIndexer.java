@@ -126,12 +126,13 @@ public class StringIndexer {
 
     public void writeJson(JsonWriter writer) throws IOException {
         writer.beginObject();
-        writer.name("idStart").value(idStart);
-        writer.name("strings");
-        writer.beginArray();
-        for (String s : strings) {
-            writer.value(s);
-        } writer.endArray();
+            writer.name("idStart").value(idStart);
+            writer.name("strings");
+                writer.beginArray();
+                    for (String s : strings) {
+                        writer.value(s);
+                    }
+                writer.endArray();
         writer.endObject();
     }
 
