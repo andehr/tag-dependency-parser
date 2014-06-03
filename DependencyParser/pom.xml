@@ -5,7 +5,7 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>dependencyparser</artifactId>
     <inceptionYear>2014</inceptionYear>
-    <version>1.8.3</version>
+    <version>1.8.4</version>
     <packaging>jar</packaging>
 
     <parent>
