@@ -13,12 +13,21 @@ import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
 import uk.ac.susx.tag.dependencyparser.transitionselectionmethods.SelectionMethod;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.TreeSet;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -210,10 +219,12 @@ public class Parser {
     public void parseFile(File data, File output, String dataFormat, String classifierOptions, String transitionSelectionMethod) throws IOException {
         try (CoNLLWriter out = new CoNLLWriter(output, dataFormat);
              CoNLLReader in = new CoNLLReader(data, dataFormat)) {
-
+            printStatus("Parsing file: " + data.getAbsolutePath());
             while(in.hasNext()) {
                 out.write(parseSentence(in.next(), classifierOptions, transitionSelectionMethod));
             }
+            printStatus("\n  File parsed: " + data.getAbsolutePath() +
+                        "\n  Output: " + output.getAbsolutePath());
         }
     }
 
@@ -337,6 +348,57 @@ public class Parser {
         try {
             pool.awaitTermination(27, TimeUnit.DAYS);
         } catch (InterruptedException e) { throw new RuntimeException(e); }
+    }
+
+    public void batchParseFile(File data, File output, final String dataFormat, final String classifierOptions, final String transitionSelectionMethod) throws IOException {
+
+        final PriorityBlockingQueue<ConcurrencyUtils.ParsedSentence> processedData = new PriorityBlockingQueue<>();
+        final BlockingQueue<ConcurrencyUtils.ParsedSentence> outputReadyData = new LinkedBlockingQueue<>();
+        ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        int id = 0;
+
+        // Consumes processed data, and produces sentences as they are ready to be written in the original order
+        new Thread(new ConcurrencyUtils.SentenceConsumerProducerInOriginalOrder(outputReadyData, processedData)).start();
+
+        // Consumes the ready-to-be-written data and writes to file.
+        Thread writer = new Thread(new ConcurrencyUtils.SentenceConsumerToFile(outputReadyData, output, dataFormat));
+        writer.start();
+
+        try (CoNLLReader reader = new CoNLLReader(data, dataFormat)){
+            printStatus("Parsing file: " + data.getAbsolutePath());
+            while(reader.hasNext()) {
+                final int processID = id;
+                final List<Token> sentence = reader.next();
+                pool.execute(
+                    new Runnable() {
+                        public void run() {
+                            processedData.put(
+                               new ConcurrencyUtils.ParsedSentence(
+                                    processID,
+                                    parseSentence(sentence, classifierOptions, transitionSelectionMethod)));
+                        }
+                    }
+                );
+                id++;
+            }
+        }
+        // Graceful shutdown of pool allows submitted tasks to keep running
+        pool.shutdown();
+        try {
+            // Block until tasks are done
+            pool.awaitTermination(27, TimeUnit.DAYS);
+        } catch (InterruptedException e) { throw new RuntimeException(e); }
+
+        // Empty sentence tells the consumers to shutdown.
+        processedData.put(new ConcurrencyUtils.ParsedSentence(id, new ArrayList<Token>()));
+
+        // Wait for the consumer that writes to file to finish executing before exiting.
+        try {
+            writer.join();
+        } catch (InterruptedException e) { e.printStackTrace(); }
+
+        printStatus("\n  File parsed: " + data.getAbsolutePath() +
+                    "\n  Output: " + output.getAbsolutePath());
     }
 
 
@@ -619,6 +681,14 @@ public class Parser {
      * See code for specification of args.
      */
     public static void main(String[] args) throws Exception {
+
+        new Parser().batchParseFile(new File("/Volumes/LocalDataHD/adr27/Desktop/testtweets.txt"),
+                                    new File("/Volumes/LocalDataHD/adr27/Desktop/testtweets.parsed.txt"),
+                                    "id, form, ignore, pos, ignore, ignore, head, deprel, ignore, ignore",
+                                    "",
+                                    "confidence");
+        System.exit(0);
+
         // 0. If no args, then print help-file.
         if (args.length < 1) {
             printHelpfileAndOptions();
