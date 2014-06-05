@@ -1,8 +1,7 @@
-package uk.ac.susx.tag.dependencyparser;
+package uk.ac.susx.tag.dependencyparser.datastructures;
 
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import uk.ac.susx.tag.dependencyparser.datastructures.StringIndexer;
 import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
 
 import java.io.File;
@@ -19,7 +18,15 @@ import java.io.OutputStreamWriter;
  *  - Transitions and their IDs
  *  - Features and their IDs
  *
+ * Each mapping is represented using StringIndexer instances.
+ *
+ * This allows features and transitions to be reduced to integer values (which machine learning classifiers can
+ * easily work with).
+ *
  * Provides saving and loading functionality.
+ *
+ * Maintains a "readOnly" property, so it is possible to lock the mappings against modification, in order to
+ * guarantee safety for concurrency for example.
  *
  * Created by Andrew D. Robertson on 13/04/2014.
  */

@@ -5,6 +5,8 @@ import uk.ac.susx.tag.dependencyparser.classifiers.Classifier;
 import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
 import uk.ac.susx.tag.dependencyparser.transitionselectionmethods.SelectionMethod;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -58,6 +60,10 @@ import java.util.Set;
  */
 public class Options {
 
+    private static String classifiersPackage = "uk.ac.susx.tag.dependencyparser.classifiers";
+    private static String parseStylesPackage = "uk.ac.susx.tag.dependencyparser.parsestyles";
+    private static String transitionSelectionMethodsPackage = "uk.ac.susx.tag.dependencyparser.transitionselectionmethods";
+
     /**
      * The first step to becoming a new option in any of the extensible parts of this project, is to extend a class
      * that implements this interface. The new option must provide a key by which the user selects the option.
@@ -71,15 +77,15 @@ public class Options {
     }
 
     public static Classifier getClassifier(String classifierKey){
-        return getOption("uk.ac.susx.tag.dependencyparser.classifiers", Classifier.class, classifierKey);
+        return getOption(classifiersPackage, Classifier.class, classifierKey);
     }
 
     public static ParseStyle getParserStyle(String parseStyleKey){
-        return getOption("uk.ac.susx.tag.dependencyparser.parsestyles", ParseStyle.class, parseStyleKey);
+        return getOption(parseStylesPackage, ParseStyle.class, parseStyleKey);
     }
 
     public static SelectionMethod getSelectionMethod(String selectionMethodKey){
-        return getOption("uk.ac.susx.tag.dependencyparser.transitionselectionmethods", SelectionMethod.class, selectionMethodKey);
+        return getOption(transitionSelectionMethodsPackage, SelectionMethod.class, selectionMethodKey);
     }
 
     /**
@@ -94,14 +100,16 @@ public class Options {
     public static void printAvailableOptionsSummary() {
         System.out.println("--- Available Options ---");
 
-        System.out.println("\nParse styles:");
-        printAvailableOptions("uk.ac.susx.tag.dependencyparser.parsestyles", ParseStyle.class);
+        printOptions("\nParse styles:", getAvailableOptions(parseStylesPackage, ParseStyle.class));
 
-        System.out.println("\nClassifier types:");
-        printAvailableOptions("uk.ac.susx.tag.dependencyparser.classifiers", Classifier.class);
+        printOptions("\nClassifier types:", getAvailableOptions(classifiersPackage, Classifier.class));
 
-        System.out.println("\nTransition selection methods:");
-        printAvailableOptions("uk.ac.susx.tag.dependencyparser.transitionselectionmethods", SelectionMethod.class);
+        printOptions("\nTransition selection methods:", getAvailableOptions(transitionSelectionMethodsPackage, SelectionMethod.class));
+    }
+    private static void printOptions(String title, List<String> options) {
+        System.out.println(title);
+        for (String option : options)
+            System.out.println(" " + option);
     }
 
     // Here comes the reflection and generics fun...
@@ -121,7 +129,7 @@ public class Options {
             try {
                 O option = klass.newInstance();
                 if(key.equals(option.key())) return option;
-            } catch (InstantiationException | IllegalAccessException e) {  throw new RuntimeException(e); }
+            } catch (InstantiationException | IllegalAccessException e) { throw new RuntimeException(e); }
         } throw new RuntimeException("No option found matching the specified key");
     }
 
@@ -129,14 +137,14 @@ public class Options {
      * For each class in *packagePath* which is a subtype of *type* (and therefore implements Option), print
      * the value returned from its key() method, thereby presenting the list of available options in a package.
      */
-    private static <O extends Option> void printAvailableOptions(String packagePath, Class<O> type) {
+    private static <O extends Option> List<String> getAvailableOptions(String packagePath, Class<O> type) {
+        List<String> foundOptions = new ArrayList<>();
         Reflections reflections = new Reflections(packagePath);
         Set<Class<? extends O>> options = reflections.getSubTypesOf(type);
         for (Class<? extends O> klass : options) {
             try {
-                System.out.println(" " + klass.newInstance().key());
+                foundOptions.add(klass.newInstance().key());
             } catch (InstantiationException | IllegalAccessException e) { throw new RuntimeException(e);}
-        }
+        } return foundOptions;
     }
-
 }

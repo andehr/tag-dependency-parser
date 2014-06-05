@@ -1,4 +1,4 @@
-package uk.ac.susx.tag.dependencyparser;
+package uk.ac.susx.tag.dependencyparser.datastructures;
 
 import com.google.common.base.Joiner;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
@@ -16,9 +16,9 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * This class represents the definition of a parser feature model. The specification is laid out in plain text by the
- * user, and then it can be loaded in in order to specify what features the parser extracts in order to make its
- * decisions.
+ * This class represents the definition of a parser feature extraction model. The specification is laid out in plain
+ * text by the user, and then it can be loaded in in order to specify what features the parser extracts in order to make
+ * its decisions.
  *
  * Format specification:
  *

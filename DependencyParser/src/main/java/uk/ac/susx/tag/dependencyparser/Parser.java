@@ -4,12 +4,16 @@ import com.google.common.io.Resources;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import uk.ac.susx.tag.dependencyparser.classifiers.Classifier;
+import uk.ac.susx.tag.dependencyparser.datastructures.FeatureTable;
+import uk.ac.susx.tag.dependencyparser.datastructures.Index;
 import uk.ac.susx.tag.dependencyparser.datastructures.Sentence;
 import uk.ac.susx.tag.dependencyparser.datastructures.SparseBinaryVector;
 import uk.ac.susx.tag.dependencyparser.datastructures.StringIndexer;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 import uk.ac.susx.tag.dependencyparser.parserstates.ParserState;
 import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
+import uk.ac.susx.tag.dependencyparser.textmanipulation.CoNLLReader;
+import uk.ac.susx.tag.dependencyparser.textmanipulation.CoNLLWriter;
 import uk.ac.susx.tag.dependencyparser.transitionselectionmethods.SelectionMethod;
 
 import java.io.*;
@@ -18,14 +22,9 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.PriorityQueue;
-import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -58,6 +57,10 @@ public class Parser {
     // If the parser is done with a sentence, and left tokens without a head, then the ROOT token is assigned as the
     // head with the relation below. This is consistent with the Stanford dependency scheme.
     private static final String rootRelation = "root";
+
+    // The number of days to let a thread pool attempt to parse data before giving up (only applies to parallel
+    // batch functions
+    private static final int timeoutDays = 100;
 
     /*
       The following are what constitute the information that the parser leans on during parsing and training.
@@ -210,6 +213,12 @@ public class Parser {
      *
      * Only ever holds one sentence in memory at a time.
      *
+     * Parsing is done in SERIAL.
+     *
+     * Expect ~1100 sentences parsed per second.
+     *
+     * See batchParseFile() for parallel parsing of file.
+     *
      * @param data File containing sentences to be parsed.
      * @param output File to output parsed sentences.
      * @param dataFormat Format of the input and output file. See CoNLLReader and CoNLLWriter
@@ -228,6 +237,9 @@ public class Parser {
         }
     }
 
+    /**
+     * Parse sentence with sensible defaults.
+     */
     public List<Token> parseSentence(List<Token> sentence) {
         return parseSentence(sentence, "", "confidence");
     }
@@ -316,7 +328,7 @@ public class Parser {
             });
         } pool.shutdown();
         try {
-            pool.awaitTermination(27, TimeUnit.DAYS);
+            pool.awaitTermination(timeoutDays, TimeUnit.DAYS);
         } catch (InterruptedException e) { throw new RuntimeException(e); }
     }
 
@@ -331,7 +343,7 @@ public class Parser {
         }
         pool.shutdown();
         try {
-            pool.awaitTermination(27, TimeUnit.DAYS);
+            pool.awaitTermination(timeoutDays, TimeUnit.DAYS);
         } catch (InterruptedException e) { throw new RuntimeException(e); }
     }
 
@@ -346,11 +358,19 @@ public class Parser {
         }
         pool.shutdown();
         try {
-            pool.awaitTermination(27, TimeUnit.DAYS);
+            pool.awaitTermination(timeoutDays, TimeUnit.DAYS);
         } catch (InterruptedException e) { throw new RuntimeException(e); }
     }
 
-    public void batchParseFile(File data, File output, final String dataFormat, final String classifierOptions, final String transitionSelectionMethod) throws IOException {
+    /**
+     * Parse a file, putting the results in an output file.
+     */
+    public void batchParseFile(File data,
+                               File output,
+                               final String inputFormat,
+                               final String outputFormat,
+                               final String classifierOptions,
+                               final String transitionSelectionMethod) throws IOException {
 
         final PriorityBlockingQueue<ConcurrencyUtils.ParsedSentence> processedData = new PriorityBlockingQueue<>();
         final BlockingQueue<ConcurrencyUtils.ParsedSentence> outputReadyData = new LinkedBlockingQueue<>();
@@ -361,10 +381,10 @@ public class Parser {
         new Thread(new ConcurrencyUtils.SentenceConsumerProducerInOriginalOrder(outputReadyData, processedData)).start();
 
         // Consumes the ready-to-be-written data and writes to file.
-        Thread writer = new Thread(new ConcurrencyUtils.SentenceConsumerToFile(outputReadyData, output, dataFormat));
+        Thread writer = new Thread(new ConcurrencyUtils.SentenceConsumerToFile(outputReadyData, output, outputFormat));
         writer.start();
 
-        try (CoNLLReader reader = new CoNLLReader(data, dataFormat)){
+        try (CoNLLReader reader = new CoNLLReader(data, inputFormat)){
             printStatus("Parsing file: " + data.getAbsolutePath());
             while(reader.hasNext()) {
                 final int processID = id;
@@ -386,7 +406,7 @@ public class Parser {
         pool.shutdown();
         try {
             // Block until tasks are done
-            pool.awaitTermination(27, TimeUnit.DAYS);
+            pool.awaitTermination(timeoutDays, TimeUnit.DAYS);
         } catch (InterruptedException e) { throw new RuntimeException(e); }
 
         // Empty sentence tells the consumers to shutdown.
@@ -430,6 +450,10 @@ public class Parser {
                      "confidence");
     }
 
+    /**
+     * Convenience method with sensible defaults.
+     * Allows specification of just the training file and format of the training data.
+     */
     public static Parser train(File trainingData, String dataFormat) throws IOException {
         File index = new File(trainingData.getAbsolutePath()+"-index");
         File model = new File(trainingData.getAbsolutePath()+"-model");
@@ -446,13 +470,14 @@ public class Parser {
 
     /**
      * Convenience method with sensible defaults.
-     * Allows specification of just the training file and the file that specifies how feature extraction is to be done.
+     * Allows specification of just the training file, the format of the training data,
+     * and the file that specifies how feature extraction is to be done.
      */
-    public static Parser train(File trainingData, File featureTable) throws IOException {
+    public static Parser train(File trainingData, String dataFormat, File featureTable) throws IOException {
 
         File index = new File(trainingData.getAbsolutePath()+"-index");
         File model = new File(trainingData.getAbsolutePath()+"-model");
-        return train(trainingData, "id, form, pos, head, deprel", new FeatureTable(featureTable), index, model,
+        return train(trainingData, dataFormat, new FeatureTable(featureTable), index, model,
                      "-s 4 -c 0.1 -e 0.1 -B -1",
                      "linear-svm",
                      "arc-eager",
@@ -576,7 +601,7 @@ public class Parser {
         // Save the feature/transition index
         parser.index.save(indexOutput);
 
-        // Try a delete of the temporary file.
+        // Try a delete of the temporary vector format file.
         if (!convertedTrainingData.delete()) System.err.println("WARNING: converted training temp file not deleted: " + convertedTrainingData.getAbsolutePath());
 
         printStatus("Done.");
@@ -681,13 +706,6 @@ public class Parser {
      * See code for specification of args.
      */
     public static void main(String[] args) throws Exception {
-
-        new Parser().batchParseFile(new File("/Volumes/LocalDataHD/adr27/Desktop/testtweets.txt"),
-                                    new File("/Volumes/LocalDataHD/adr27/Desktop/testtweets.parsed.txt"),
-                                    "id, form, ignore, pos, ignore, ignore, head, deprel, ignore, ignore",
-                                    "",
-                                    "confidence");
-        System.exit(0);
 
         // 0. If no args, then print help-file.
         if (args.length < 1) {

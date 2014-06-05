@@ -1,4 +1,4 @@
-package uk.ac.susx.tag.dependencyparser;
+package uk.ac.susx.tag.dependencyparser.textmanipulation;
 
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 

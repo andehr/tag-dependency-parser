@@ -2,7 +2,7 @@ package uk.ac.susx.tag.dependencyparser.transitionselectionmethods;
 
 import com.google.common.collect.Ordering;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
-import uk.ac.susx.tag.dependencyparser.Index;
+import uk.ac.susx.tag.dependencyparser.datastructures.Index;
 import uk.ac.susx.tag.dependencyparser.parserstates.ParserState;
 import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
 
