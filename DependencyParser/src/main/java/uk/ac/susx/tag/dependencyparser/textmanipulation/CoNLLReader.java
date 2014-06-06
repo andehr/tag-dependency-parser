@@ -2,21 +2,12 @@ package uk.ac.susx.tag.dependencyparser.textmanipulation;
 
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.io.*;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
- * Class for reading in vaguely CoNLL-esque data. Here are the rules:
+ * Class for reading in CoNLL-esque data. Here are the rules:
  *
  *  - Token per line
  *  - Sentences separated by blank lines
@@ -30,7 +21,7 @@ import java.util.regex.Pattern;
  *  The format string that you pass to the reader is a comma separated list of the attributes in the order that should be
  *  expected for each token.
  *
- *  Say my data looks like this :
+ *  Say my data looks like this:
  *
  *   1    dogs    N
  *   2    hate    V
@@ -46,11 +37,17 @@ import java.util.regex.Pattern;
  *   2    hate   _    V
  *   3    cats   _    N
  *
- *  "id" is a reserved word. And if your format doesn't specify IDs, then they'll be added to the tokens for you.
+ *  "id" is a reserved word. And if your format doesn't specify IDs, then they'll be added to the tokens for you
+ *  (because they are required by the parsing process).
  *
  *  "head" and "deprel" are reserved words for listing the gold standard dependency relations for tokens. If your
  *  format includes these terms then those attributes will automatically be loaded into the Token object's "goldHead" and
  *  "goldDeprel" fields (so that the parser cannot cheat during prediction and/or the information is available during training).
+ *
+ * CONVERSION: The Parser class has a method for using a CoNLL Reader and Writer to convert between formats.
+ *
+ * USAGE NOTE: Best usage is probably with Java's try-with-resources, see example usage in Parser.parseFile()
+ *             Otherwise, you'll need to manually close the reader.
  *
  * Created by Andrew D. Robertson on 16/04/2014.
  */

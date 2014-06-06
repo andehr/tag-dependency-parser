@@ -1,10 +1,6 @@
 package uk.ac.susx.tag.dependencyparser.classifiers;
 
-import de.bwaldvogel.liblinear.FeatureNode;
-import de.bwaldvogel.liblinear.InvalidInputDataException;
-import de.bwaldvogel.liblinear.Linear;
-import de.bwaldvogel.liblinear.Model;
-import de.bwaldvogel.liblinear.TrainOpenAccess;
+import de.bwaldvogel.liblinear.*;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import uk.ac.susx.tag.dependencyparser.Parser;
 import uk.ac.susx.tag.dependencyparser.datastructures.SparseBinaryVector;

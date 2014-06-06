@@ -35,7 +35,7 @@ public class Token {
     // ID within the sentence.
     private int id;
 
-    // Attributes from which features may be drawn
+    // Static attributes from which features may be drawn
     private Map<String, String> attributes;
 
     // Mid parse decisions (can be accessed during feature extraction using addressing functions, see FeatureTable class)
@@ -83,7 +83,17 @@ public class Token {
     }
 
     /**
-     * Get a Token representing the artificial root token.
+     * Get a new Token representing an artificial root token.
+     *
+     * Typically this is only used internal to a ParserState. The reason being, that the parser state needs to track
+     * the root token, because Tokens maintain references to both their head and children tokens. So the root token
+     * isn't just something you can throw new instances around with (because a new instance won't have any references
+     * to children assigned to it at parse-time).
+     *
+     * If you want access to the artificial root of a sentence being currently parsed, use the ParserState's
+     * getRootToken() method. An example usage of this kind can be found in Parser.parseSentence() where after parsing,
+     * the parser finds any tokens that do not have a head assigned, gets the root token, and assigns it as the head
+     * of those tokens.
      */
     public static Token newRootToken(){
         return new Token(0, "ROOT");
@@ -103,14 +113,14 @@ public class Token {
 
 
     /**
-     * Check if a token comes before this token in the sentence.
+     * Return true if this token comes before the "other" in the sentence.
      */
     public boolean comesBefore(Token other) {
         return id < other.id;
     }
 
     /**
-     * Check if a token comes after this token in the sentence.
+     * Return true if this token comes after the "other" in the sentence.
      */
     public boolean comesAfter(Token other){
         return id > other.id;

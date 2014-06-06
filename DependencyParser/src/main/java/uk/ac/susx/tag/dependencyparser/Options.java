@@ -65,6 +65,12 @@ public class Options {
     private static String transitionSelectionMethodsPackage = "uk.ac.susx.tag.dependencyparser.transitionselectionmethods";
 
     /**
+     * TEST.
+     * Print out the available options.
+     */
+    public static void main(String[] args){ printAvailableOptionsSummary(); }
+
+    /**
      * The first step to becoming a new option in any of the extensible parts of this project, is to extend a class
      * that implements this interface. The new option must provide a key by which the user selects the option.
      *
@@ -87,11 +93,6 @@ public class Options {
     public static SelectionMethod getSelectionMethod(String selectionMethodKey){
         return getOption(transitionSelectionMethodsPackage, SelectionMethod.class, selectionMethodKey);
     }
-
-    /**
-     * Print out the available options.
-     */
-    public static void main(String[] args){ printAvailableOptionsSummary(); }
 
     /**
      * Use this for testing what options are available at a glance and/or checking whether your custom options

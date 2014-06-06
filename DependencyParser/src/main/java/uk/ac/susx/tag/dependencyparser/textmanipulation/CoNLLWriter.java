@@ -3,11 +3,7 @@ package uk.ac.susx.tag.dependencyparser.textmanipulation;
 import com.google.common.base.Joiner;
 import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -15,7 +11,7 @@ import java.util.regex.Pattern;
 /**
  * Mostly used for evaluation purposes.
  *
- * Will output in the format expected by CoNLL shared task (2009 I think?).
+ * Will output in the format expected by CoNLL shared task (by default 2009).
  * Mostly used for comparing performance against the WSJ.
  *
  * Though you can specify your own output format.
@@ -30,6 +26,11 @@ import java.util.regex.Pattern;
  *   head   : the ID of the head token assigned to this token by the parser (or _ if no such head)
  *   ignore  : a filler, simply prints an underscore (effectively providing an ignored attribute, perhaps
  *             for subsequent processors to fill for example)
+ *
+ * CONVERSION: The Parser class has a method for using a CoNLL Reader and Writer to convert between formats.
+ *
+ * USAGE NOTE: Best usage is probably with Java's try-with-resources, see example usage in Parser.parseFile()
+ *             Otherwise, you'll need to manually close the writer.
  *
  * User: Andrew D. Robertson
  * Date: 24/04/2014
@@ -52,6 +53,9 @@ public class CoNLLWriter implements AutoCloseable {
         this.format = formatSplitter.split(outputFormat.toLowerCase());
     }
 
+    /**
+     * Write a sentence to the opened file using the format specified.
+     */
     public void write(List<Token> sentence) throws IOException {
         for (Token token : sentence) {
             writer.write(formatToken(token, format));
@@ -59,6 +63,12 @@ public class CoNLLWriter implements AutoCloseable {
         } writer.write("\n");
     }
 
+    /**
+     * Given a token, and a format specification, produce a string representing that token.
+     *
+     * Usage doesn't typically involve this method; its called internally. However, I anticipate that this functionality
+     * may be useful elsewhere.
+     */
     public static String formatToken(Token token, String[] outputFormat) {
         List<String> attributes = new ArrayList<>();
         for (String attributeType : outputFormat){

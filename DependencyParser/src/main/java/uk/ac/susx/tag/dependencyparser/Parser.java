@@ -4,12 +4,7 @@ import com.google.common.io.Resources;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import uk.ac.susx.tag.dependencyparser.classifiers.Classifier;
-import uk.ac.susx.tag.dependencyparser.datastructures.FeatureTable;
-import uk.ac.susx.tag.dependencyparser.datastructures.Index;
-import uk.ac.susx.tag.dependencyparser.datastructures.Sentence;
-import uk.ac.susx.tag.dependencyparser.datastructures.SparseBinaryVector;
-import uk.ac.susx.tag.dependencyparser.datastructures.StringIndexer;
-import uk.ac.susx.tag.dependencyparser.datastructures.Token;
+import uk.ac.susx.tag.dependencyparser.datastructures.*;
 import uk.ac.susx.tag.dependencyparser.parserstates.ParserState;
 import uk.ac.susx.tag.dependencyparser.parsestyles.ParseStyle;
 import uk.ac.susx.tag.dependencyparser.textmanipulation.CoNLLReader;
@@ -17,17 +12,8 @@ import uk.ac.susx.tag.dependencyparser.textmanipulation.CoNLLWriter;
 import uk.ac.susx.tag.dependencyparser.transitionselectionmethods.SelectionMethod;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * The main top-level execution stage.
@@ -36,6 +22,9 @@ import java.util.concurrent.TimeUnit;
  *  1. Parsing/Prediction functionality
  *  2. Training functionality
  *  3. General functionality
+ *
+ * See the Options class for information on options available to the parser and what they mean (classifiers, parse styles,
+ * transition selection methods).
  *
  * TRAINING:
  *  Look for a static train methods. There is one train method that has all the functionality, and a bunch of others
@@ -49,6 +38,9 @@ import java.util.concurrent.TimeUnit;
  * CONCURRENCY NOTE:
  *  "parseSentence" methods can be called concurrently.
  *  "parseFile" methods can be called concurrently, provided that they are operating on different input/output files.
+ *
+ *  All functions with "batch" in the name do some form of parallel parsing. They typically have more overhead (expect
+ *  to need about 2GB of RAM), but have more throughput (the more processing cores that are available).
  *
  * Created by Andrew D. Robertson on 13/04/2014.
  */
@@ -64,7 +56,7 @@ public class Parser {
 
     /*
       The following are what constitute the information that the parser leans on during parsing and training.
-      Efforts have been made such that these objects are either stateless, or are only READ FROM during PARSE-TIME
+      Efforts have been made such that these objects are either stateless, or are only READ FROM during parse-time
       (index and classifier are modified during train-time).  Hopefully this means that "parseSentence" can be called
       concurrently without problems.
      */
@@ -109,23 +101,26 @@ public class Parser {
     /**
      * Convenience method with same defaults as above except that the user can specify another index and model to be
      * found in the jar's resources. The index file is expected to be in the resources folder with name:
-     * trainingData+"-index", and the model with name: trainingData+"-model".
+     * parserName+"-index", and the model with name: parserName+"-model".
      */
-    public Parser(String trainingData) throws IOException {
+    public Parser(String parserName) throws IOException {
 
-        // Get type and load classifier model
+        // Create a temporary file, into which we will stream the classifier model from JAR resources.
         File model = File.createTempFile("model", null);
-        model.deleteOnExit();
+        model.deleteOnExit();  // Ensure that temporary file is deleted once execution is completed.
 
+        // Copy classifier model to temporary file
         try (BufferedOutputStream modelStream = new BufferedOutputStream(new FileOutputStream(model)) ){
-            Resources.copy(Resources.getResource(trainingData+"-model"), modelStream);
+            Resources.copy(Resources.getResource(parserName+"-model"), modelStream);
         }
+
+        // Get appropriate classifier instance and use it to load the model
         classifier = Options.getClassifier("linear-svm");
         classifier.load(model);
         if (!model.delete()) System.err.print("WARNING: model temp file was not deleted: "+ model.getAbsolutePath());
 
         // Load and set index to read only
-        this.index = Index.load(Resources.getResource(trainingData+"-index").openStream());
+        this.index = Index.load(Resources.getResource(parserName+"-index").openStream());
         this.index.setReadOnly(true);
 
         // Load feature table
@@ -203,9 +198,22 @@ public class Parser {
         this.selectionMethod = Options.getSelectionMethod(transitionSelectionMethod);
     }
 
+    /**
+     * Change the way that the parser interprets the classifier's output in order to select a transition.
+     *
+     * For most use cases, you should just pass the correct selection method to the parser constructor upon creation.
+     *
+     * This is the only aspect of the parser's state that I could envision you might want to be able to change without
+     * having to reload a whole new model (and therefore just using a constructor). Maybe you're comparing several
+     * methods, and don't want the overhead of reading in the model more than once.
+     */
+    public void setTransitionSelectionMethod(String method){
+        selectionMethod = Options.getSelectionMethod(method);
+    }
+
 
     public void parseFile(File data, File output) throws IOException {
-        parseFile(data, output, "id, form, pos, head, deprel", "", "confidence");
+        parseFile(data, output, "id, form, pos, head, deprel", "");
     }
 
     /**
@@ -223,14 +231,13 @@ public class Parser {
      * @param output File to output parsed sentences.
      * @param dataFormat Format of the input and output file. See CoNLLReader and CoNLLWriter
      * @param classifierOptions Options passed to the classifier at prediction time
-     * @param transitionSelectionMethod Method of deciding which transition to select
      */
-    public void parseFile(File data, File output, String dataFormat, String classifierOptions, String transitionSelectionMethod) throws IOException {
+    public void parseFile(File data, File output, String dataFormat, String classifierOptions) throws IOException {
         try (CoNLLWriter out = new CoNLLWriter(output, dataFormat);
              CoNLLReader in = new CoNLLReader(data, dataFormat)) {
             printStatus("Parsing file: " + data.getAbsolutePath());
             while(in.hasNext()) {
-                out.write(parseSentence(in.next(), classifierOptions, transitionSelectionMethod));
+                out.write(parseSentence(in.next(), classifierOptions));
             }
             printStatus("\n  File parsed: " + data.getAbsolutePath() +
                         "\n  Output: " + output.getAbsolutePath());
@@ -241,7 +248,7 @@ public class Parser {
      * Parse sentence with sensible defaults.
      */
     public List<Token> parseSentence(List<Token> sentence) {
-        return parseSentence(sentence, "", "confidence");
+        return parseSentence(sentence, "");
     }
 
     /**
@@ -255,10 +262,9 @@ public class Parser {
      * wanted the ID of the head, then you could call getID() on the head token, or getHeadID() on the original token.
      *
      * @param sentence The sentence to be parsed.
-     * @param classifierOptions Options passed to the classifier at prediction time
-     * @param transitionSelectionMethod The method by which transitions are selected given the classifier output.
+     * @param classifierOptions Options passed to the classifier at prediction time (empty string is fine)
      */
-    public List<Token> parseSentence(List<Token> sentence, String classifierOptions, String transitionSelectionMethod) {
+    public List<Token> parseSentence(List<Token> sentence, String classifierOptions) {
         // Get the suitable type of parser state for this style of parsing
         ParserState state = parseStyle.getNewParserState();
 
@@ -271,7 +277,7 @@ public class Parser {
         // Keep finding next transition until state is terminal
         while (!state.isTerminal()) {
 
-            // Get the feature vector of this state, only temporarily storing new feature IDs
+            // Get the feature vector of this state, only temporarily storing new (previously unseen) feature IDs
             SparseBinaryVector v = getFeatureVector(state, temporaryFeatureIDs);
 
             // Place to store the decision scores for each transition (obtained from classifier during prediction)
@@ -294,9 +300,17 @@ public class Parser {
         return sentence;
     }
 
-    public <E extends Sentence.ParsableWithPoSAndForm> List<E> parsePoSandFormBearingTokens(List<E> sentence, String classifierOptions, String transitionSelectionMethod) {
+    /**
+     * Any method that is of the form [batch]parse[dataStructure]BearingTokens is designed to take as input a sentence
+     * which implements one of the corresponding interfaces in the Sentence. The aim being that those objects will be
+     * directly annotated with the result of the parse (rather than returning Token objects from which you must extract
+     * the parse yourself).
+     *
+     * See Sentence.ParsableWithPoSAndForm
+     */
+    public <E extends Sentence.ParsableWithPoSAndForm> List<E> parsePoSandFormBearingTokens(List<E> sentence, String classifierOptions) {
         Sentence parsed = Sentence.createFromPoSandFormBearingTokens(sentence);
-        parseSentence(parsed, classifierOptions, transitionSelectionMethod);
+        parseSentence(parsed, classifierOptions);
         for (int i = 0; i < parsed.size(); i++){
             Token parsedToken = parsed.get(i);
             E originalToken = sentence.get(i);
@@ -306,9 +320,17 @@ public class Parser {
         return sentence;
     }
 
-    public <E extends Sentence.ParsableWithAttributeMap> List<E> parseAttributeMapBearingTokens(List<E> sentence, String classifierOptions, String transitionSelectionMethod){
+    /**
+     * Any method that is of the form [batch]parse[dataStructure]BearingTokens is designed to take as input a sentence
+     * which implements one of the corresponding interfaces in the Sentence. The aim being that those objects will be
+     * directly annotated with the result of the parse (rather than returning Token objects from which you must extract
+     * the parse yourself).
+     *
+     * See Sentence.ParsableWithAttributeMap
+     */
+    public <E extends Sentence.ParsableWithAttributeMap> List<E> parseAttributeMapBearingTokens(List<E> sentence, String classifierOptions){
         Sentence parsed = Sentence.createFromAttributeMapBearingTokens(sentence);
-        parseSentence(parsed, classifierOptions, transitionSelectionMethod);
+        parseSentence(parsed, classifierOptions);
         for (int i = 0; i < parsed.size(); i++){
             Token parsedToken = parsed.get(i);
             E originalToken = sentence.get(i);
@@ -318,12 +340,20 @@ public class Parser {
         return sentence;
     }
 
-    public <E extends Sentence.ParsableWithPoSAndForm> void batchParsePoSandFormBearingTokens(Iterable<List<E>> sentences, final String classifierOptions, final String transitionSelectionMethod){
+    /**
+     * Any method that is of the form [batch]parse[dataStructure]BearingTokens is designed to take as input a sentence
+     * which implements one of the corresponding interfaces in the Sentence. The aim being that those objects will be
+     * directly annotated with the result of the parse (rather than returning Token objects from which you must extract
+     * the parse yourself).
+     *
+     * See Sentence.ParsableWithPoSAndForm
+     */
+    public <E extends Sentence.ParsableWithPoSAndForm> void batchParsePoSandFormBearingTokens(Iterable<List<E>> sentences, final String classifierOptions){
         ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (final List<E> sentence : sentences) {
             pool.execute(new Runnable() {
                 public void run() {
-                    parsePoSandFormBearingTokens(sentence, classifierOptions, transitionSelectionMethod);
+                    parsePoSandFormBearingTokens(sentence, classifierOptions);
                 }
             });
         } pool.shutdown();
@@ -332,31 +362,37 @@ public class Parser {
         } catch (InterruptedException e) { throw new RuntimeException(e); }
     }
 
-    public <E extends Sentence.ParsableWithAttributeMap> void batchParseAttributeMapBearingTokens(Iterable<List<E>> sentences, final String classifierOptions, final String transitionSelectionMethod){
+    /**
+     * Any method that is of the form [batch]parse[dataStructure]BearingTokens is designed to take as input a sentence
+     * which implements one of the corresponding interfaces in the Sentence. The aim being that those objects will be
+     * directly annotated with the result of the parse (rather than returning Token objects from which you must extract
+     * the parse yourself).
+     *
+     * See Sentence.ParsableWithAttributeMap
+     */
+    public <E extends Sentence.ParsableWithAttributeMap> void batchParseAttributeMapBearingTokens(Iterable<List<E>> sentences, final String classifierOptions){
         ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (final List<E> sentence : sentences) {
             pool.execute(new Runnable() {
                 public void run() {
-                    parseAttributeMapBearingTokens(sentence, classifierOptions, transitionSelectionMethod);
+                    parseAttributeMapBearingTokens(sentence, classifierOptions);
                 }
             });
-        }
-        pool.shutdown();
+        } pool.shutdown();
         try {
             pool.awaitTermination(timeoutDays, TimeUnit.DAYS);
         } catch (InterruptedException e) { throw new RuntimeException(e); }
     }
 
-    public void batchParseSentences(Iterable<List<Token>> sentences, final String classifierOptions, final String transitionSelectionMethod){
+    public void batchParseSentences(Iterable<List<Token>> sentences, final String classifierOptions){
         ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (final List<Token> sentence : sentences){
             pool.execute(new Runnable() {
                 public void run() {
-                    parseSentence(sentence, classifierOptions, transitionSelectionMethod);
+                    parseSentence(sentence, classifierOptions);
                 }
             });
-        }
-        pool.shutdown();
+        } pool.shutdown();
         try {
             pool.awaitTermination(timeoutDays, TimeUnit.DAYS);
         } catch (InterruptedException e) { throw new RuntimeException(e); }
@@ -369,8 +405,7 @@ public class Parser {
                                File output,
                                final String inputFormat,
                                final String outputFormat,
-                               final String classifierOptions,
-                               final String transitionSelectionMethod) throws IOException {
+                               final String classifierOptions) throws IOException {
 
         final PriorityBlockingQueue<ConcurrencyUtils.ParsedSentence> processedData = new PriorityBlockingQueue<>();
         final BlockingQueue<ConcurrencyUtils.ParsedSentence> outputReadyData = new LinkedBlockingQueue<>();
@@ -380,7 +415,7 @@ public class Parser {
         // Consumes processed data, and produces sentences as they are ready to be written in the original order
         new Thread(new ConcurrencyUtils.SentenceConsumerProducerInOriginalOrder(outputReadyData, processedData)).start();
 
-        // Consumes the ready-to-be-written data and writes to file.
+        // Consumes the ready-to-be-written data and writes it to file.
         Thread writer = new Thread(new ConcurrencyUtils.SentenceConsumerToFile(outputReadyData, output, outputFormat));
         writer.start();
 
@@ -395,7 +430,7 @@ public class Parser {
                             processedData.put(
                                new ConcurrencyUtils.ParsedSentence(
                                     processID,
-                                    parseSentence(sentence, classifierOptions, transitionSelectionMethod)));
+                                    parseSentence(sentence, classifierOptions)));
                         }
                     }
                 );
@@ -624,9 +659,6 @@ public class Parser {
         this.parseStyle = Options.getParserStyle(parseStyle);
         this.selectionMethod = Options.getSelectionMethod(transitionSelectionMethod);
     }
-
-
-
 
 /***********************************************************************************************************************
  *

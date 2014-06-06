@@ -105,7 +105,10 @@ public class Sentence extends ArrayList<Token> {
      * Make an exact duplicate of a sentence and any parse decisions assigned to that sentence by the parser.
      * For this to be possible, the current artificial root token must be passed in (you can acquire this by
      * calling parseState.getRootToken() on your current ParseState instance. You also need to pass in a new
-     * root token (Can be acquired through Token.getNewRoot
+     * root token (Can be acquired through Token.getNewRoot).
+     *
+     * Typically this function will be used by a ParserState implementing its copy() function, since a ParserState is
+     * where the artificial root node is created and tracked.
      */
     public static Sentence parsedCopy(List<Token> original, Token originalRoot, Token newRoot){
         Sentence copy = unparsedCopy(original);
