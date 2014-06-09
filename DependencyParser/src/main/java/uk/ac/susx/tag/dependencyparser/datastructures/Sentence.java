@@ -43,6 +43,12 @@ public class Sentence extends ArrayList<Token> {
 
     public Sentence(int initialCapacity) { super(initialCapacity); }
 
+    /*
+     * Creation methods for building an entire sentence in one fell swoop. Inputs must be either direct
+     * attribute maps to be made into tokens, or be objects that implement one of the relevant interfaces
+     * at the bottom of this class.
+     */
+
     public static Sentence createFromAttributeList(Iterable<Map<String, String>> tokenAttributes) {
         Sentence s = new Sentence();
         for (Map<String, String> attMap : tokenAttributes)
@@ -65,7 +71,7 @@ public class Sentence extends ArrayList<Token> {
     }
 
     /*
-     * Add methods for building a sentence
+     * Add methods for building a sentence token per token
      */
 
     public void add(String form) {
@@ -118,6 +124,8 @@ public class Sentence extends ArrayList<Token> {
 
     /**
      * This interface tells the parser that subclasses have a PoS and Form with which to construct a Token object.
+     * Implementing this interface allows the use of a creation method (found at top of class) to directly make a full
+     * sentence.
      */
     public static interface PoSandFormBearing {
 
@@ -128,6 +136,8 @@ public class Sentence extends ArrayList<Token> {
     /**
      * This interface tells the parser that subclasses have a map of attributes that can be used to instantiate a
      * Token object.
+     * Implementing this interface allows the use of a creation method (found at top of class) to directly make a full
+     * sentence.
      */
     public static interface AttributeMapBearing {
 

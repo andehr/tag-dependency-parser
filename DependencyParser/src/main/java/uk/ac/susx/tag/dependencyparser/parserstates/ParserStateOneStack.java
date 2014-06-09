@@ -8,7 +8,7 @@ import uk.ac.susx.tag.dependencyparser.datastructures.Token;
 import java.util.List;
 
 /**
- * This is your bog-standard transition based datastructure:
+ * This is your bog-standard transition based data-structure:
  *
  *  1 stack
  *  1 queue for the buffer
@@ -82,16 +82,22 @@ public class ParserStateOneStack extends ParserState {
 
     @Override
     public ClonedState copy(List<Token> currentSentence){
+        // New root token. Its children are copied over from the current root during the Sentence.parsedCopy() call.
         Token newRoot = Token.newRootToken();
+
+        // Make a copy of the current sentence (and therefore any arcs that have been assigned so far)
         List<Token> copySentence = Sentence.parsedCopy(currentSentence, root, newRoot);
 
-        // We know capacity, so set initial capacity
+        // We know capacity, so set initial capacity (buffer will only ever need to be big enough to hold the whole sentence)
         IndexableQueue<Token> copyBuffer = new IndexableQueue<>(0, currentSentence.size());
+
+        // For each token in the current buffer, get the matching copied tokens, and put them in the copied buffer
         for (Token token : buffer){
             int id = token.getID();
             copyBuffer.push((id == 0) ? newRoot : copySentence.get(id - 1));
         }
 
+        // Go from the bottom of the current stack, getting the matching copied tokens, and placing them on the copied stack
         Stack<Token> copyStack = new Stack<>();
         for (int i = stack.size()-1; i >= 0; i--){
             int id = stack.get(i).getID();

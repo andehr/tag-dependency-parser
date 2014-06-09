@@ -27,7 +27,7 @@ public class ParseStyleArcEager extends ParseStyle {
 
     @Override
     public boolean transition(ParserState s, Transition t, boolean perform) {
-        ParserStateOneStack state = (ParserStateOneStack)s;
+        ParserStateOneStack state = (ParserStateOneStack)s; // If this fails, then the user didn't use this class' getNewParserState() to supply *s*.
         switch (t.transitionName) {
             case leftArc:
                 return leftArc(state, t.arcLabel, perform);
@@ -45,9 +45,11 @@ public class ParseStyleArcEager extends ParseStyle {
     @Override
     public Transition optimumTrainingTransition(ParserState s, TrainingData data) {
         if (s.isTerminal()) return null; // This ensures that the buffer has at least 1 item.
+
         ParserStateOneStack state = (ParserStateOneStack)s;
         Stack<Token> stack = state.getStack();
         IndexableQueue<Token> buffer = state.getBuffer();
+
         if (stack.isNotEmpty()) {  // If there is nothing on the stack, then all we can do is shift.
             Token stackTop = stack.peek();    // Get the next item on the stack
             Token bufferTop = buffer.peek();  // Get the next item on the buffer
@@ -84,7 +86,7 @@ public class ParseStyleArcEager extends ParseStyle {
     }
 
     /*
-     * Transitions.
+     * Transitions below.
      *
      * If a transition assigns a relation, then it requires a label parameter.
      *

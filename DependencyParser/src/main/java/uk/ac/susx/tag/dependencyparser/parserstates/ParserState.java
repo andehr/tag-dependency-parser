@@ -36,6 +36,9 @@ public abstract class ParserState {
      *
      * This exposes the data structures to the feature extraction process. Return null if there is no token
      * as the location present.
+     *
+     * Convention is to use a three letter word for structureType, so that the feature table specification file looks
+     * vaguely clean and aligned.
      */
     public abstract Token getToken(String structureType, int address);
 
@@ -67,7 +70,7 @@ public abstract class ParserState {
      *
      * If you're implementing your own copy function in your own ParserState, then be sure to check out the
      * Sentence.parsedCopy() method, which can make a copy of a list of Tokens properly. This is half your work
-     * done.
+     * done (see example copy() function in the ParserStateOneStack class).
      */
     public abstract ClonedState copy(List<Token> currentSentence);
 

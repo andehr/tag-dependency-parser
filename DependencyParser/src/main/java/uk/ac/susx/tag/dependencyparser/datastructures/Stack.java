@@ -9,9 +9,10 @@ import java.util.NoSuchElementException;
 /**
  * Simple FILO data structure implemented using array list.
  *
- * No clever things going on, just for convenience of having index 0 mean that last element instead of first.
+ * No clever things going on, just for convenience of having index 0 mean the last element instead of first.
  *
- * So just a more restricted ArrayList with reversed indexing.
+ * So just a more restricted ArrayList with reversed indexing (where push() and pop() operate on the last element,
+ * which is used as the top of the stack).
  *
  * Created by Andrew D. Robertson on 11/04/2014.
  */

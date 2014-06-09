@@ -75,7 +75,7 @@ public class FeatureTable {
     // Value used when a feature can't be extracted from the current parser state (i.e. cos the token don't have that feature, or that token doesn't exist. E.g. the head(stk[0]) only exists if a head has been assigned to the top stack item.
     private static final String absentFeature = "--absentFeature--";
 
-    // Used during reading of the feature table
+    // Used during reading of the feature table, compiled ahead of time since they are used often during reading of specification file
     private static final Pattern columnSplit = Pattern.compile("\\s*:\\s*");
     private static final Pattern termSplit = Pattern.compile("\\s+");
     private static final Pattern argSplit = Pattern.compile(",");
@@ -83,7 +83,7 @@ public class FeatureTable {
     private static final Pattern indexSplit = Pattern.compile("\\[");
     private static final Pattern indexSplit2 = Pattern.compile("\\]");
 
-    // List of lines that define which features to extract
+    // List of lines that define which features to extract, correspond to lines in the feature table specification file
     private List<FeatureDefinitionLine> featureDefinitionLines;
 
     public FeatureTable(File featureTable) throws IOException {

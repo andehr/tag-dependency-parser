@@ -43,7 +43,9 @@ public class Index {
     public StringIndexer getTransitionIndexer() {return transitions;}
 
     /**
-     * Get the ID for a particular transition. Use boolean for deciding whether to add new ID if one aint present.
+     * Get the ID for a particular transition. If addIfNotPresent is true, then if the transition is not in the index,
+     * then it will be added and a new ID will be generated and returned (unless the Index is set to readOnly, in which
+     * case an error will be thrown).
      */
     public int getTransitionID(ParseStyle.Transition transition, boolean addIfNotPresent) {
         if (readOnly && addIfNotPresent) throw new RuntimeException("addIfNotPresent is set to true on an Index marked as read-only. The index is read-only during parse-time to enable concurrency.");
@@ -59,13 +61,16 @@ public class Index {
 
     /**
      * Given the ID of a transition get the appropriate transition.
+     * Throws index out of range error if an inappropriate ID is specified.
      */
     public ParseStyle.Transition getTransition(int id) {
         return ParseStyle.Transition.interpretTransition(transitions.getValue(id));
     }
 
     /**
-     * Get ID of a particular feature. Use switch to determine if new ID is added if one aint present.
+     * Get ID of a particular feature. If addIfNotPresent and there is no ID for that feature, then the feature is
+     * added to the index, given a new ID and the ID is returned (unless the index is read only, in which case
+     * an error is thrown).
      */
     public int getFeatureID(String feature, boolean addIfNotPresent) {
         if (readOnly && addIfNotPresent) throw new RuntimeException("addIfNotPresent is set to true on an Index marked as read-only. The index is read-only during parse-time to enable concurrency.");
