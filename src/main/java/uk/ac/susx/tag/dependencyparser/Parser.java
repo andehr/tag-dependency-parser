@@ -118,12 +118,20 @@ public class Parser {
         this("full_wsj_cmu_pos_stanford_dep");
     }
 
+    public Parser(String parserName) throws IOException {
+        this("full_wsj_cmu_pos_stanford_dep", Options.getSelectionMethod("confidence"));
+    }
+
+    public Parser(SelectionMethod method) throws IOException {
+        this("full_wsj_cmu_pos_stanford_dep", method);
+    }
+
     /**
      * Convenience method with same defaults as above except that the user can specify another index and model to be
      * found in the jar's resources. The index file is expected to be in the resources folder with name:
      * parserName+"-index", and the model with name: parserName+"-model".
      */
-    public Parser(String parserName) throws IOException {
+    public Parser(String parserName, SelectionMethod method) throws IOException {
 
         // Create a temporary file, into which we will stream the classifier model from JAR resources.
         File model = File.createTempFile("model", null);
@@ -150,7 +158,7 @@ public class Parser {
         parseStyle = Options.getParserStyle("arc-eager");
 
         // Ascertain transition selection method
-        selectionMethod = Options.getSelectionMethod("confidence");
+        selectionMethod = method;
     }
 
     /**
