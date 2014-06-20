@@ -30,9 +30,10 @@ import java.util.List;
 
 /**
  * Represents an efficient two-way mapping between strings and IDs.
- *   - Retrieving strings using IDs is Θ(1) (backed by an array)
+ *   - Retrieving strings using IDs is amortized constant (backed by a growing array)
  *   - Retrieving IDs using strings is whatever hashmap retrieval in fastutil is... Probably average case Θ(1) with an
- *     insanely unlikely worst case Θ(n) (this would require the hashes to have collided for all elements)
+ *     insanely unlikely worst case Θ(n) (this would require the hashes to have collided for all elements)... So...
+ *     amortized constant?
  *
  * The IDs start from 1 by default (avoids some nasty LIBLINEAR and LIBSVM limitations; indexing from 0 causes unexplained crashes).
  *
