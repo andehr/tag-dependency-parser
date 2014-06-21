@@ -740,7 +740,11 @@ public class Parser {
     }
 
     public void evaluate(File goldStandard) throws IOException {
-        evaluate(goldStandard, "/usr/bin/perl", "id, form, pos, head, deprel", "");
+        evaluate(goldStandard, "perl", "id, form, pos, head, deprel", "");
+    }
+
+    public void evaluate(File goldStandard, String perlLocation) throws IOException {
+        evaluate(goldStandard, perlLocation, "id, form, pos, head, deprel", "");
     }
 
     public void evaluate(File goldStandard, String perlLocation, String dataFormat, String classifyOptions) throws IOException {
