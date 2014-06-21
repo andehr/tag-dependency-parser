@@ -739,6 +739,35 @@ public class Parser {
         }
     }
 
+    public void evaluate(File goldStandard) throws IOException {
+        evaluate(goldStandard, "/usr/bin/perl", "id, form, pos, head, deprel", "");
+    }
+
+    public void evaluate(File goldStandard, String perlLocation, String dataFormat, String classifyOptions) throws IOException {
+        File evalScript = File.createTempFile("evalScript", null);
+        evalScript.deleteOnExit();  // Ensure that temporary file is deleted once execution is completed.
+
+        // Copy classifier model to temporary file
+        try (BufferedOutputStream modelStream = new BufferedOutputStream(new FileOutputStream(evalScript)) ){
+            Resources.copy(Resources.getResource("eval.pl"), modelStream);
+        }
+
+        File parsedData = File.createTempFile("parsedData", null);
+        parsedData.deleteOnExit();
+
+        // Parse the gold standard, writing out the results to temporary file
+        parseFile(goldStandard, parsedData, dataFormat, classifyOptions);
+
+        // Execute perl evaluation script on gold standard and parsing results, the script should print results to standard out
+        Runtime.getRuntime().exec(perlLocation + " " + evalScript.getAbsolutePath() +
+                                   " -g " + goldStandard.getAbsolutePath() +
+                                   " -s " + parsedData.getAbsolutePath());
+
+        // Explicitly try to delete temporary files, reporting any failures.
+        if (!parsedData.delete()) System.err.print("WARNING: temporary parsed gold standard file was not deleted: " + parsedData.getAbsolutePath());
+        if (!evalScript.delete()) System.err.print("WARNING: temporary eval script was not deleted: " + evalScript.getAbsolutePath());
+    }
+
     /**
      * duh.
      */
