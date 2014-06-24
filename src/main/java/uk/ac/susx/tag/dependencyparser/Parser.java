@@ -148,7 +148,7 @@ public class Parser {
         if (!model.delete()) System.err.print("WARNING: model temp file was not deleted: "+ model.getAbsolutePath());
 
         // Load and set index to read only
-        this.index = Index.load(Resources.getResource(parserName+"-index").openStream());
+        this.index = Index.load(Resources.getResource(parserName + "-index").openStream());
         this.index.setReadOnly(true);
 
         // Load feature table
@@ -733,41 +733,67 @@ public class Parser {
         try (CoNLLWriter outfile = new CoNLLWriter(output, outputFormat);
              CoNLLReader infile  = new CoNLLReader(input, inputFormat)){
 
+            // See the "ghead" and "gdeprel" explanations in the CoNLLWriter comments for what this is doing.
+            // We ensure that we're only copying over gold standard stuff, not parser output (since there is none).
+            outfile.replaceParserOutputWithGoldRelations();
+
             while (infile.hasNext()){
                 outfile.write(infile.next());
             }
         }
     }
 
-    public void evaluate(File goldStandard) throws IOException {
-        evaluate(goldStandard, "perl", "id, form, pos, head, deprel", "");
+    public void evaluate(File goldStandard) throws IOException, InterruptedException {
+        evaluate(goldStandard, "perl", "id,form,ignore,ignore,pos,ignore,ignore,ignore,head,ignore,deprel,ignore,ignore,ignore", "");
     }
 
-    public void evaluate(File goldStandard, String perlLocation) throws IOException {
-        evaluate(goldStandard, perlLocation, "id, form, pos, head, deprel", "");
+    public void evaluate(File goldStandard, String perlLocation) throws IOException, InterruptedException {
+        evaluate(goldStandard, perlLocation, "id,form,ignore,ignore,pos,ignore,ignore,ignore,head,ignore,deprel,ignore,ignore,ignore", "");
     }
 
-    public void evaluate(File goldStandard, String perlLocation, String dataFormat, String classifyOptions) throws IOException {
+    public void evaluate(File goldStandard, String perlLocation, String dataFormat, String classifyOptions) throws IOException, InterruptedException {
+        // This is the format that the eval script expects.
+        final String requiredFormat = "id,form,ignore,ignore,pos,ignore,ignore,ignore,head,ignore,deprel,ignore,ignore,ignore";
+
+        File goldData = goldStandard;
+
+        // If the data is not of this format, then create a temporary converted version
+        if (!dataFormat.equals(requiredFormat)) {
+            goldData = File.createTempFile("goldstandard", null);
+            goldData.deleteOnExit();
+            // Note that we're careful to copy over the "ghead" and "gdeprel" (the gold standard versions, because by default, the CoNLLWriter assumes by "head" and "deprel" in the format string, that you mean the output of the parser; but the parser hasn't done anything yet, we're just copying over the gold standard data
+            convert(goldStandard, dataFormat, goldData, "id,form,ignore,ignore,pos,ignore,ignore,ignore,ghead,ignore,gdeprel,ignore,ignore,ignore");
+        }
+
+        // Copy the eval script to a temporary file ready for execution
         File evalScript = File.createTempFile("evalScript", null);
         evalScript.deleteOnExit();  // Ensure that temporary file is deleted once execution is completed.
-
-        // Copy classifier model to temporary file
         try (BufferedOutputStream modelStream = new BufferedOutputStream(new FileOutputStream(evalScript)) ){
             Resources.copy(Resources.getResource("eval.pl"), modelStream);
         }
 
+        // Create a temporary file to which we will write the parsed version of the data
         File parsedData = File.createTempFile("parsedData", null);
         parsedData.deleteOnExit();
 
-        // Parse the gold standard, writing out the results to temporary file
-        parseFile(goldStandard, parsedData, dataFormat, classifyOptions);
+        // Parse the gold standard, writing out the results to the temporary file
+        parseFile(goldData, parsedData, requiredFormat, classifyOptions);
 
-        // Execute perl evaluation script on gold standard and parsing results, the script should print results to standard out
-        Runtime.getRuntime().exec(perlLocation + " " + evalScript.getAbsolutePath() +
-                                   " -g " + goldStandard.getAbsolutePath() +
-                                   " -s " + parsedData.getAbsolutePath());
+        // Build command for execute evaluation script
+        ProcessBuilder pb = new ProcessBuilder(perlLocation, evalScript.getAbsolutePath(),
+                                                "-g", goldData.getAbsolutePath(),
+                                                "-s", parsedData.getAbsolutePath());
+
+        // Redirect the output of the script to standard out of this parent process
+        pb.redirectErrorStream(true);
+        pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+
+        // Execute and wait for the script to finish before cleaning up temporary files
+        Process p = pb.start();
+        p.waitFor();
 
         // Explicitly try to delete temporary files, reporting any failures.
+        if (!dataFormat.equals(requiredFormat) && !goldData.delete()) System.err.print("WARNING: temporary gold standard file was not deleted: " + goldData.getAbsolutePath());
         if (!parsedData.delete()) System.err.print("WARNING: temporary parsed gold standard file was not deleted: " + parsedData.getAbsolutePath());
         if (!evalScript.delete()) System.err.print("WARNING: temporary eval script was not deleted: " + evalScript.getAbsolutePath());
     }

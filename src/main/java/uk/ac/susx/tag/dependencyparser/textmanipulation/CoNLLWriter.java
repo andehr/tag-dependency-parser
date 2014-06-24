@@ -44,6 +44,8 @@ import java.util.regex.Pattern;
  *   id : the ID of the token
  *   deprel : the dependency relation assigned to this token by the parser (or _ if no such relation)
  *   head   : the ID of the head token assigned to this token by the parser (or _ if no such head)
+ *   gdeprel: the gold standard head of this token
+ *   ghead  : the gold standard dependency relation type of this token
  *   ignore  : a filler, simply prints an underscore (effectively providing an ignored attribute, perhaps
  *             for subsequent processors to fill for example)
  *
@@ -91,22 +93,49 @@ public class CoNLLWriter implements AutoCloseable {
      */
     public static String formatToken(Token token, String[] outputFormat) {
         List<String> attributes = new ArrayList<>();
-        for (String attributeType : outputFormat){
-            if (attributeType.equals("ignore")){
-                attributes.add("_");
-            } else if (attributeType.equals("id")) {
-                attributes.add(Integer.toString(token.getID()));
-            } else if (attributeType.equals("deprel")) {
-                String deprel = token.getDeprel();
-                attributes.add(deprel==null? "_" : deprel);
-            } else if (attributeType.equals("head")) {
-                String head = token.getHead()==null? "_" : Integer.toString(token.getHeadID());
-                attributes.add(head);
-            } else if (token.hasAtt(attributeType)) {
-                attributes.add(token.getAtt(attributeType));
-            } else throw new RuntimeException("Output format specifies an attribute that the token does not possess. Token: "+token+", attribute: "+attributeType);
+        for (String attributeType : outputFormat) {
+            switch (attributeType) {
+                case "ignore":
+                    attributes.add("_"); break;
+                case "id":
+                    attributes.add(Integer.toString(token.getID())); break;
+                case "deprel":
+                    String deprel = token.getDeprel();
+                    attributes.add(deprel == null ? "_" : deprel);
+                    break;
+                case "head":
+                    String head = token.getHead() == null ? "_" : Integer.toString(token.getHeadID());
+                    attributes.add(head);
+                    break;
+                case "ghead":
+                    attributes.add(Integer.toString(token.getGoldHead())); break;
+                case "gdeprel":
+                    attributes.add(token.getGoldDeprel()); break;
+                default:
+                    if (token.hasAtt(attributeType)) {
+                        attributes.add(token.getAtt(attributeType));
+                    } else throw new RuntimeException("Output format specifies an attribute that the token does not possess. Token: " + token + ", attribute: " + attributeType);
+                    break;
+            }
         }
         return Joiner.on("\t").join(attributes);
+    }
+
+    /**
+     * When the user specifies attributes in the format "head" and "deprel", the writer assumes that the user wants
+     * to output the head and deprel that have been attached to the token using the parser, NOT the gold standard.
+     * If you want the writer to output the gold standard, then you should use the "ghead" and "gdeprel" attributes.
+     * Alternatively, this method used on an already constructed writer, will convert any mentions of "head" or "deprel"
+     * in the format string to their gold standard counterparts. See class comments.
+     */
+    public void replaceParserOutputWithGoldRelations(){
+        for (int i = 0; i < format.length; i++){
+            if(format[i].equals("head")){
+                format[i] = "ghead";
+            } else if (format[i].equals("deprel")){
+                format[i] = "gdeprel";
+            }
+        }
     }
 
     @Override
