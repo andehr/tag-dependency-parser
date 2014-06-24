@@ -762,7 +762,7 @@ public class Parser {
             goldData = File.createTempFile("goldstandard", null);
             goldData.deleteOnExit();
             // Note that we're careful to copy over the "ghead" and "gdeprel" (the gold standard versions, because by default, the CoNLLWriter assumes by "head" and "deprel" in the format string, that you mean the output of the parser; but the parser hasn't done anything yet, we're just copying over the gold standard data
-            convert(goldStandard, dataFormat, goldData, "id,form,ignore,ignore,pos,ignore,ignore,ignore,ghead,ignore,gdeprel,ignore,ignore,ignore");
+            convert(goldStandard, dataFormat, goldData, requiredFormat);
         }
 
         // Copy the eval script to a temporary file ready for execution
