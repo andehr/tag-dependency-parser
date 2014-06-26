@@ -751,6 +751,10 @@ public class Parser {
         evaluate(goldStandard, perlLocation, "id,form,ignore,ignore,pos,ignore,ignore,ignore,head,ignore,deprel,ignore,ignore,ignore", "");
     }
 
+    public void evaluate(File goldStandard, String perlLocation, String dataFormat) throws IOException, InterruptedException {
+        evaluate(goldStandard, perlLocation, dataFormat, "");
+    }
+
     public void evaluate(File goldStandard, String perlLocation, String dataFormat, String classifyOptions) throws IOException, InterruptedException {
         // This is the format that the eval script expects.
         final String requiredFormat = "id,form,ignore,ignore,pos,ignore,ignore,ignore,head,ignore,deprel,ignore,ignore,ignore";
