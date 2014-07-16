@@ -37,3 +37,11 @@ Next, create a new Maven project (e.g. using IntelliJ). In your project pom.xml 
 Replace "x.x.x" with the relevant version number (the same version number that was reported after the mvn install).
 
 The parser does not ship with any trained models, so you'll need to train a parser before you can use the parse methods. See the Parser.java source file comments for details.
+
+
+Help file
+---------
+
+Run the static method ```printHelpfileAndOptions()``` on the Parser class to see a help file which details the general structure and usage of the parser. 
+
+If you have access to the source, then this help file is located in: ```src/main/resources```
