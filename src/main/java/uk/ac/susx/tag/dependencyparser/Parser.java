@@ -103,6 +103,14 @@ public class Parser {
  *
  ***********************************************************************************************************************/
 
+    public static Parser parserWithCMUPosAndStanfordDeprels() throws IOException {
+        return new Parser("full_wsj_cmu_pos_stanford_dep");
+    }
+
+    public static Parser parserWithPennPosAndStanfordDeprels() throws IOException {
+        return new Parser("full_wsj_penn_pos_stanford_dep");
+    }
+
     /**
      * All Defaults:
      *
@@ -119,7 +127,7 @@ public class Parser {
     }
 
     public Parser(String parserName) throws IOException {
-        this("full_wsj_cmu_pos_stanford_dep", Options.getSelectionMethod("confidence"));
+        this(parserName, Options.getSelectionMethod("confidence"));
     }
 
     public Parser(SelectionMethod method) throws IOException {
@@ -819,19 +827,20 @@ public class Parser {
     /**
      * Run tests from command line with default settings.
      *
-     * There are 4 modes to choose from:
+     * There are 5 modes to choose from:
      *
      *   0. Output help-file and available options for parsing. (0 args)
      *   1. Train a new parser (1 arg)
      *   2. Parse a file and write out result (2 args)
-     *   3. Convert a file from one format to another (4 args)
+     *   3. With a given parser model name, parse a file and write out the result (3 args)
+     *   4. Convert a file from one format to another (4 args)
      *
      * See code for specification of args.
      */
     public static void main(String[] args) throws Exception {
 
-        // 0. If no args, then print help-file.
-        if (args.length < 1) {
+        // 0. If no args (or too many), then print help-file.
+        if (args.length < 1 || args.length > 4) {
             printHelpfileAndOptions();
         }
 
@@ -851,8 +860,24 @@ public class Parser {
             new Parser().parseFile(new File(args[0]), new File(args[1]));
         }
 
+
         /*
-         * 3. Convert the format of the sentences in a file
+         * Predict cycle on a file. The additional argument should be the name of a parser
+         * model in the resources folder. So for example, if there is a parser model consisting
+         * of the two files:
+         *
+         *  1. full_wsj_penn_pos_stanford_dep-model
+         *  2. full_wsj_penn_pos_stanford_dep-index
+         *
+         * Then the corresponding parser model name (which should be passed as the first argument)
+         * is: full_wsj_penn_pos_stanford_dep
+         */
+        else if (args.length == 3) {
+            new Parser(args[0]).parseFile(new File(args[1]), new File(args[3]));
+        }
+
+        /*
+         * 4. Convert the format of the sentences in a file
          *    Args: input file path, input file format, output file path, output file format
          */
         else if (args.length == 4) {
