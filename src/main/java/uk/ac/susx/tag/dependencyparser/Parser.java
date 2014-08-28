@@ -893,18 +893,6 @@ public class Parser {
      */
     public static void main(String[] args) throws Exception {
 
-//        train(new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/treebank3-npbrac-stanforddeps-conll-twittertags-training.txt"),
-//                "id,form,ignore,ignore,pos,ignore,ignore,ignore,head,ignore,deprel,ignore,ignore,ignore")
-//
-//        .parseFileWithConfidence(new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/treebank3-npbrac-stanforddeps-conll-twittertags-development.txt"),
-//                new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/treebank3-npbrac-stanforddeps-conll-twittertags-development-parsed.txt"),
-//                new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/treebank3-npbrac-stanforddeps-conll-twittertags-development-confidences.txt"),
-//                "id,form,ignore,ignore,pos,ignore,ignore,ignore, head, ignore, deprel, ignore, ignore, ignore",
-//                "");
-//
-//        System.exit(0);
-
-
         // 0. If no args (or too many), then print help-file.
         if (args.length < 1 || args.length > 4) {
             printHelpfileAndOptions();
