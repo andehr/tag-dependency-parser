@@ -20,6 +20,7 @@ package uk.ac.susx.tag.dependencyparser;
  * #L%
  */
 
+import com.google.common.base.Joiner;
 import com.google.common.io.Resources;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
@@ -271,12 +272,29 @@ public class Parser {
     public void parseFile(File data, File output, String dataFormat, String classifierOptions) throws IOException {
         try (CoNLLWriter out = new CoNLLWriter(output, dataFormat);
              CoNLLReader in = new CoNLLReader(data, dataFormat)) {
+
             printStatus("Parsing file: " + data.getAbsolutePath());
             while(in.hasNext()) {
                 out.write(parseSentence(in.next(), classifierOptions));
             }
             printStatus("\n  File parsed: " + data.getAbsolutePath() +
                         "\n  Output: " + output.getAbsolutePath());
+        }
+    }
+
+    public void parseFileWithConfidence(File data, File output, File confidenceOut, String dataFormat, String classifierOptions) throws IOException {
+        try (CoNLLWriter out = new CoNLLWriter(output, dataFormat);
+             CoNLLReader in = new CoNLLReader(data, dataFormat);
+             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(confidenceOut), "UTF-8"))) {
+
+            printStatus("Parsing file: " + data.getAbsolutePath());
+            while(in.hasNext()) {
+                List<Double> confidences = new ArrayList<>();
+                out.write(parseSentenceWithConfidence(in.next(), classifierOptions, confidences));
+                bw.write(Joiner.on(",").join(confidences)); bw.write("\n");
+            }
+            printStatus("\n  File parsed: " + data.getAbsolutePath() +
+                    "\n  Output: " + output.getAbsolutePath());
         }
     }
 
@@ -320,10 +338,46 @@ public class Parser {
             Int2DoubleMap decisionScores = new Int2DoubleOpenHashMap();
 
             // Get the prediction for the best transition (and fill the decision scores map)
-            ParseStyle.Transition t = index.getTransition(classifier.predict(v, classifierOptions, decisionScores));
+            int recommendedTransition = classifier.predict(v, classifierOptions, decisionScores);
 
             // Apply the best transition that we can, given what the classifier suggests, and the decision scores it outputs
-            selectionMethod.applyBestTransition(t, decisionScores, state, parseStyle, index);
+            selectionMethod.applyBestTransition(recommendedTransition, decisionScores, state, parseStyle, index);
+        }
+
+        // Any token whose head has been left unassigned by the parser, is automatically assigned to the root.
+        for (Token token : sentence) {
+            if (!token.hasHead())
+                token.setHead(state.getRootToken(), rootRelation);
+        }
+
+        // The tokens are modified in-place, but returned anyway for convenience.
+        return sentence;
+    }
+
+    public List<Token> parseSentenceWithConfidence(List<Token> sentence, String classifierOptions, List<Double> confidences){
+        // Get the suitable type of parser state for this style of parsing
+        ParserState state = parseStyle.getNewParserState();
+
+        // Initialise the state for this sentence (e.g. loading buffer with sentence, put ROOT on the stack)
+        state.initialise(sentence);
+
+        // Place to temporarily store unseen feature IDs (instead of just increasing the size of Index indefinitely, and introducing concurrency issues for future)
+        StringIndexer temporaryFeatureIDs = new StringIndexer(index.getFeatureIndexer());
+
+        // Keep finding next transition until state is terminal
+        while (!state.isTerminal()) {
+
+            // Get the feature vector of this state, only temporarily storing new (previously unseen) feature IDs
+            SparseBinaryVector v = getFeatureVector(state, temporaryFeatureIDs);
+
+            // Place to store the decision scores for each transition (obtained from classifier during prediction)
+            Int2DoubleMap decisionScores = new Int2DoubleOpenHashMap();
+
+            // Get the prediction for the best transition (and fill the decision scores map)
+            int recommendedTransition = classifier.predict(v, classifierOptions, decisionScores);
+
+            // Apply the best transition that we can, given what the classifier suggests, and the decision scores it outputs
+            confidences.add((double)selectionMethod.applyBestTransition(recommendedTransition, decisionScores, state, parseStyle, index));
         }
 
         // Any token whose head has been left unassigned by the parser, is automatically assigned to the root.
@@ -838,6 +892,18 @@ public class Parser {
      * See code for specification of args.
      */
     public static void main(String[] args) throws Exception {
+
+//        train(new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/treebank3-npbrac-stanforddeps-conll-twittertags-training.txt"),
+//                "id,form,ignore,ignore,pos,ignore,ignore,ignore,head,ignore,deprel,ignore,ignore,ignore")
+//
+//        .parseFileWithConfidence(new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/treebank3-npbrac-stanforddeps-conll-twittertags-development.txt"),
+//                new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/treebank3-npbrac-stanforddeps-conll-twittertags-development-parsed.txt"),
+//                new File("/Volumes/LocalDataHD/adr27/EclipseProjects/workspace/ParsingSuite/for_java_project/treebank3-npbrac-stanforddeps-conll-twittertags-development-confidences.txt"),
+//                "id,form,ignore,ignore,pos,ignore,ignore,ignore, head, ignore, deprel, ignore, ignore, ignore",
+//                "");
+//
+//        System.exit(0);
+
 
         // 0. If no args (or too many), then print help-file.
         if (args.length < 1 || args.length > 4) {

@@ -44,22 +44,27 @@ public interface SelectionMethod extends Options.Option {
      * Given the parser's current state, and the recommendations of the classifier for the next transition,
      * apply the best possible transition.
      *
+     * The return value is in case that some feedback on the result needs to be utilised. E.g. what was the
+     * confidence of that decision?
      *
      * IMPORTANT NOTE: The Index object retrieved from the parser using parser.getIndex() will be READ-ONLY, so do
      *                 not attempt to call index.getTransitionID() or index.getFeatureID() with the parameter
      *                 "addIfNotPresent" set to true. This ensures that if the parser.parseSentence() function
      *                 is called concurrently, that threads are not trying to modify things naughtily.
      *
-     * @param classifierRecommends The transition that the classifier recommends (which may or may not be feasible)
+     *
+     *
+     *
+     * @param classifierRecommends The id of the transition that the classifier recommends (which may or may not be feasible)
      * @param decisionScores A mapping from each transition ID to its score according to the classifier
      * @param state The parser's current state
      * @param parseStyle The style of parsing being used. Use this is make transitions on the parser state
      * @param index The index that knows the mapping between features and their IDs and transitions and their IDs
      */
-    public void applyBestTransition(ParseStyle.Transition classifierRecommends,
-                                    Int2DoubleMap decisionScores,
-                                    ParserState state,
-                                    ParseStyle parseStyle,
-                                    Index index);
+    public Object applyBestTransition(int classifierRecommends,
+                                      Int2DoubleMap decisionScores,
+                                      ParserState state,
+                                      ParseStyle parseStyle,
+                                      Index index);
 
 }

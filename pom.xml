@@ -5,11 +5,11 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>dependencyparser</artifactId>
     <inceptionYear>2014</inceptionYear>
-    <version>1.14.0</version>
+    <version>1.17.0</version>
     <packaging>jar</packaging>
 
     <parent>
-        <version>1.0.0</version>
+        <version>1.0.3</version>
         <groupId>uk.ac.susx.tag</groupId>
         <artifactId>tag-dist</artifactId>
         <relativePath>../tag-dist</relativePath>
@@ -35,7 +35,7 @@
             <!--Fast primitive collections-->
             <groupId>it.unimi.dsi</groupId>
             <artifactId>fastutil</artifactId>
-            <version>6.5.7</version>
+            <version>6.5.15</version>
         </dependency>
 
         <dependency>

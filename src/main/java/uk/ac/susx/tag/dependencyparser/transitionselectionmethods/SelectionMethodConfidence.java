@@ -49,10 +49,11 @@ import java.util.Map;
 public class SelectionMethodConfidence implements SelectionMethod {
 
     @Override
-    public void applyBestTransition(ParseStyle.Transition classifierRecommends, Int2DoubleMap decisionScores, ParserState state, ParseStyle parseStyle, Index index) {
+    public Object applyBestTransition(int classifierRecommends, Int2DoubleMap decisionScores, ParserState state, ParseStyle parseStyle, Index index) {
 
         // 1. Try the transition that the classifier thinks is best.
-        if (parseStyle.transition(state, classifierRecommends, true)) return;
+        if (parseStyle.transition(state, index.getTransition(classifierRecommends), true))
+            return decisionScores.get(classifierRecommends);
 
         // 2. If the transition is not possible, then continue with the aim of selecting the next best, based on the decision scores returned from the classifier
 
@@ -78,7 +79,7 @@ public class SelectionMethodConfidence implements SelectionMethod {
         // NOTE: Currently the best overall transition (the one that the classifier suggested and was impossible) will be tried again here. But that's no biggy.
         for (Map.Entry<String, Double> entry : new ScoredTransitionTypeOrdering().reverse().immutableSortedCopy(bestScorePerBaseTrans.entrySet())){
             if(parseStyle.transition(state, index.getTransition(bestIDPerBaseTrans.get(entry.getKey())), true))
-                return;
+                return entry.getValue();
         }
         // If we've reached this point, then all types of transition have been tried and none were possible
         throw new RuntimeException("No transition was possible. This should be impossible. Perhaps the parse style was implemented incorrectly.");
