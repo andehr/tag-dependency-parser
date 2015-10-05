@@ -21,6 +21,7 @@ package uk.ac.susx.tag.dependencyparser;
  */
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
@@ -35,6 +36,7 @@ import uk.ac.susx.tag.dependencyparser.transitionselectionmethods.SelectionMetho
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.StreamSupport;
 
 /**
  * The main top-level execution stage.
@@ -260,7 +262,7 @@ public class Parser {
      *
      * Parsing is done in SERIAL.
      *
-     * Expect ~1100 sentences parsed per second.
+     * Expect ~1100 tweets parsed per second. (3.2Ghz Intel i5)
      *
      * See batchParseFile() for parallel parsing of file.
      *
@@ -279,6 +281,19 @@ public class Parser {
             }
             printStatus("\n  File parsed: " + data.getAbsolutePath() +
                         "\n  Output: " + output.getAbsolutePath());
+        }
+    }
+
+    public void parseFile(File data, File output, String inputFormat, String outputFormat, String classifierOptions) throws IOException {
+        try (CoNLLWriter out = new CoNLLWriter(output, outputFormat);
+             CoNLLReader in = new CoNLLReader(data, inputFormat)) {
+
+            printStatus("Parsing file: " + data.getAbsolutePath());
+            while(in.hasNext()) {
+                out.write(parseSentence(in.next(), classifierOptions));
+            }
+            printStatus("\n  File parsed: " + data.getAbsolutePath() +
+                    "\n  Output: " + output.getAbsolutePath());
         }
     }
 
@@ -477,15 +492,17 @@ public class Parser {
     public void batchParseSentences(Iterable<List<Token>> sentences, final String classifierOptions){
         ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (final List<Token> sentence : sentences){
-            pool.execute(new Runnable() {
-                public void run() {
-                    parseSentence(sentence, classifierOptions);
-                }
-            });
+            pool.execute(() -> parseSentence(sentence, classifierOptions));
         } pool.shutdown();
         try {
             pool.awaitTermination(timeoutDays, TimeUnit.DAYS);
         } catch (InterruptedException e) { throw new RuntimeException(e); }
+    }
+
+    public void batchParseSentences2(Iterable<List<Token>> sentences, final String classifierOptions){
+         StreamSupport.stream(sentences.spliterator(), true)
+            .map((sentence) -> parseSentence(sentence, classifierOptions))
+            .count(); // Reduction operation to terminate the stream (executing the mapping)
     }
 
     /**
@@ -514,15 +531,8 @@ public class Parser {
             while(reader.hasNext()) {
                 final int processID = id;
                 final List<Token> sentence = reader.next();
-                pool.execute(
-                    new Runnable() {
-                        public void run() {
-                            processedData.put(
-                               new ConcurrencyUtils.ParsedSentence(
-                                    processID,
-                                    parseSentence(sentence, classifierOptions)));
-                        }
-                    }
+                pool.execute(() -> processedData.put(
+                                new ConcurrencyUtils.ParsedSentence(processID,parseSentence(sentence, classifierOptions)))
                 );
                 id++;
             }
@@ -892,6 +902,21 @@ public class Parser {
      * See code for specification of args.
      */
     public static void main(String[] args) throws Exception {
+
+//        List<List<Token>> sentences = new ArrayList<>();
+//        try(CoNLLReader in = new CoNLLReader(new File("/Volumes/LocalDataHD/adr27/Desktop/data/testtweets-parallel.txt"), "id,form,ignore,ignore,pos,ignore,ignore,ignore,head,ignore,deprel,ignore,ignore,ignore")){
+//
+//            while (in.hasNext()){
+//                sentences.add(in.next());
+//            }
+//        }
+//        Parser p = new Parser();
+//        printStatus("Starting the parse...");
+//        p.batchParseSentences2(sentences, "");
+//        printStatus("Done the parse...");
+//        System.exit(0);
+//
+
 
         // 0. If no args (or too many), then print help-file.
         if (args.length < 1 || args.length > 4) {
